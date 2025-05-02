@@ -1,0 +1,47 @@
+In file included from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+                 from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:47:6:[m[K [01;35m[Kwarning: [m[K#warning POINT_CLOUD_DEPRECATION_MESSAGE [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wcpp-Wcpp]8;;[m[K]
+   47 | #    [01;35m[Kwarning[m[K POINT_CLOUD_DEPRECATION_MESSAGE
+      |      [01;35m[K^~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:[m[K In member function ‘[01m[Kvirtual void gazebo::physics::LivoxOdeMultiRayShape::Init()[m[K’:
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:191:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KyawAngle[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  191 |     double [01;35m[KyawAngle[m[K, pitchAngle;
+      |            [01;35m[K^~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:191:22:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KpitchAngle[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  191 |     double yawAngle, [01;35m[KpitchAngle[m[K;
+      |                      [01;35m[K^~~~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:193:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KyDiff[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  193 |     double [01;35m[KyDiff[m[K;
+      |            [01;35m[K^~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:195:9:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KhorzSamples[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  195 |     int [01;35m[KhorzSamples[m[K = 1;
+      |         [01;35m[K^~~~~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:198:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KpDiff[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  198 |     double [01;35m[KpDiff[m[K = 0;
+      |            [01;35m[K^~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:199:9:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KvertSamples[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  199 |     int [01;35m[KvertSamples[m[K = 1;
+      |         [01;35m[K^~~~~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:203:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KminRange[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  203 |     double [01;35m[KminRange[m[K, maxRange;
+      |            [01;35m[K^~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:203:22:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KmaxRange[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+  203 |     double minRange, [01;35m[KmaxRange[m[K;
+      |                      [01;35m[K^~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:[m[K In member function ‘[01m[Kvirtual void gazebo::LivoxPointsPlugin::OnNewLaserScans()[m[K’:
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:214:22:[m[K [01;35m[Kwarning: [m[K‘[01m[Kbool sensor_msgs::convertPointCloudToPointCloud2(const PointCloud&, sensor_msgs::msg::PointCloud2&)[m[K’ is deprecated: PointCloud is deprecated as of Foxy in favor of sensor_msgs/PointCloud2. [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wdeprecated-declarations-Wdeprecated-declarations]8;;[m[K]
+  214 |         sensor_msgs::[01;35m[KconvertPointCloudToPointCloud2[m[K(cloud, cloud2);
+      |                      [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+                 from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:81:20:[m[K [01;36m[Knote: [m[Kdeclared here
+   81 | static inline bool [01;36m[KconvertPointCloudToPointCloud2[m[K(
+      |                    [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:214:52:[m[K [01;35m[Kwarning: [m[K‘[01m[Kbool sensor_msgs::convertPointCloudToPointCloud2(const PointCloud&, sensor_msgs::msg::PointCloud2&)[m[K’ is deprecated: PointCloud is deprecated as of Foxy in favor of sensor_msgs/PointCloud2. [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wdeprecated-declarations-Wdeprecated-declarations]8;;[m[K]
+  214 |         [01;35m[Ksensor_msgs::convertPointCloudToPointCloud2(cloud, cloud2)[m[K;
+      |         [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+                 from [01m[K/home/abdelrahman/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:81:20:[m[K [01;36m[Knote: [m[Kdeclared here
+   81 | static inline bool [01;36m[KconvertPointCloudToPointCloud2[m[K(
+      |                    [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
