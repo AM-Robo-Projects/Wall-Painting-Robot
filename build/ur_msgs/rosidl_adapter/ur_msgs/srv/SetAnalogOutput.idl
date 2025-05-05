@@ -1,0 +1,16 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from ur_msgs/srv/SetAnalogOutput.srv
+// generated code does not contain a copyright notice
+
+#include "ur_msgs/msg/Analog.idl"
+
+module ur_msgs {
+  module srv {
+    struct SetAnalogOutput_Request {
+      ur_msgs::msg::Analog data;
+    };
+    struct SetAnalogOutput_Response {
+      boolean success;
+    };
+  };
+};

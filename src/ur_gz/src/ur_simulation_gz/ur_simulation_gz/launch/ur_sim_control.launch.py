@@ -100,7 +100,8 @@ def launch_setup(context, *args, **kwargs):
             "prefix:=",
             prefix,
             " ",
-            "sim_ignition:=true",
+
+            "sim_gazebo:=true", #sim_ignition:=true
             " ",
             "simulation_controllers:=",
             initial_joint_controllers,
@@ -193,16 +194,39 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    gazebo_spawn_entity = Node(
+        package="gazebo_ros",
+        executable="spawn_entity.py",
+        arguments=[
+            "-topic", "robot_description",
+            "-entity", "ur",
+        ],
+        output="screen",
+    )
+
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [FindPackageShare("gazebo_ros"), "/launch", "/gazebo.launch.py"]
+        ),
+        launch_arguments={
+            "world": world_file,
+            "gui": gazebo_gui,
+        }.items(),
+    )
+
+
     nodes_to_start = [
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         initial_joint_controller_spawner_stopped,
         initial_joint_controller_spawner_started,
-        gz_spawn_entity,
-        gz_launch_description_with_gui,
-        gz_launch_description_without_gui,
-        gz_sim_bridge,
+        # gz_spawn_entity,
+        # gz_launch_description_with_gui,
+        # gz_launch_description_without_gui,
+        # gz_sim_bridge,
+        gazebo_spawn_entity,
+        gazebo  
     ]
 
     return nodes_to_start

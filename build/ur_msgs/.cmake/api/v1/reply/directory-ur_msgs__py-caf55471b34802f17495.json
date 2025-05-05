@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "ur_msgs__py",
+		"source" : "/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/ur_msgs__py"
+	}
+}

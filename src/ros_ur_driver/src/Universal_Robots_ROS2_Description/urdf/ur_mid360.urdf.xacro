@@ -128,7 +128,7 @@
   
   <xacro:include filename="$(find ros2_livox_simulation)/urdf/mid360.xacro" />
 
-  <xacro:mid360 name="livox" parent="base_link" topic="mid360">
+  <xacro:mid360 name="livox" parent="world" topic="mid360">
     <origin xyz="0 2 0.025" rpy="0 0 0"/>
   </xacro:mid360>
 
@@ -138,6 +138,8 @@
     </gazebo>
     <gazebo>
       <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+        <robot_param>robot_description</robot_param>
+        <robot_param_node>robot_state_publisher</robot_param_node>
         <parameters>$(arg simulation_controllers)</parameters>
       </plugin>
     </gazebo>

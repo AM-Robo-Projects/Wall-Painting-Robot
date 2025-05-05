@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_generator_c/ur_msgs/msg/detail/digital__type_support.h

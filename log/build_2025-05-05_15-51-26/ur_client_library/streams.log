@@ -1,0 +1,186 @@
+[0.190s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake /home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/Universal_Robots_Client_Library -DCMAKE_INSTALL_PREFIX=/home/abdelrahman/Wall-Painting-Robot/install/ur_client_library
+[0.241s] -- The C compiler identification is GNU 11.4.0
+[0.286s] -- The CXX compiler identification is GNU 11.4.0
+[0.294s] -- Detecting C compiler ABI info
+[0.352s] -- Detecting C compiler ABI info - done
+[0.360s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.360s] -- Detecting C compile features
+[0.361s] -- Detecting C compile features - done
+[0.364s] -- Detecting CXX compiler ABI info
+[0.511s] -- Detecting CXX compiler ABI info - done
+[0.515s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.515s] -- Detecting CXX compile features
+[0.515s] -- Detecting CXX compile features - done
+[0.516s] [0mur_client_library: You did not request a specific build type: selecting 'RelWithDebInfo'.[0m
+[0.517s] -- Looking for pthread.h
+[0.611s] -- Looking for pthread.h - found
+[0.611s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[0.660s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[0.662s] -- Found Threads: TRUE  
+[0.662s] -- Building tests disabled.
+[0.665s] -- Configuring done
+[0.678s] -- Generating done
+[0.683s] -- Build files have been written to: /home/abdelrahman/Wall-Painting-Robot/build/ur_client_library
+[0.688s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake /home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/Universal_Robots_Client_Library -DCMAKE_INSTALL_PREFIX=/home/abdelrahman/Wall-Painting-Robot/install/ur_client_library
+[0.690s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --build /home/abdelrahman/Wall-Painting-Robot/build/ur_client_library -- -j22 -l22
+[0.734s] [  3%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/comm/tcp_socket.cpp.o[0m
+[0.734s] [  3%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/control/script_command_interface.cpp.o[0m
+[0.734s] [  4%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/control/reverse_interface.cpp.o[0m
+[0.734s] [  6%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_state.cpp.o[0m
+[0.734s] [  8%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/comm/tcp_server.cpp.o[0m
+[0.734s] [ 11%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/primary_client.cpp.o[0m
+[0.734s] [ 11%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_message/version_message.cpp.o[0m
+[0.735s] [ 13%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/control/trajectory_point_interface.cpp.o[0m
+[0.735s] [ 14%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_message/error_code_message.cpp.o[0m
+[0.735s] [ 16%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_message.cpp.o[0m
+[0.735s] [ 18%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_state/kinematics_info.cpp.o[0m
+[0.735s] [ 19%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/control/script_sender.cpp.o[0m
+[0.746s] [ 22%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/control_package_setup_inputs.cpp.o[0m
+[0.746s] [ 22%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/control_package_pause.cpp.o[0m
+[0.748s] [ 24%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/robot_state/robot_mode_data.cpp.o[0m
+[0.748s] [ 26%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/primary/primary_package.cpp.o[0m
+[0.750s] [ 27%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/control_package_setup_outputs.cpp.o[0m
+[0.757s] [ 29%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/data_package.cpp.o[0m
+[0.764s] [ 31%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/rtde_package.cpp.o[0m
+[0.770s] [ 32%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/get_urcontrol_version.cpp.o[0m
+[0.789s] [ 34%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/request_protocol_version.cpp.o[0m
+[0.794s] [ 36%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/control_package_start.cpp.o[0m
+[1.622s] [ 37%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/text_message.cpp.o[0m
+[1.633s] [ 39%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/rtde_client.cpp.o[0m
+[1.634s] [ 40%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/ur_driver.cpp.o[0m
+[1.650s] [ 42%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/calibration_checker.cpp.o[0m
+[1.717s] [ 44%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/dashboard_client.cpp.o[0m
+[1.786s] [ 45%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/instruction_executor.cpp.o[0m
+[1.798s] [ 47%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/version_information.cpp.o[0m
+[1.816s] [ 49%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/tool_communication.cpp.o[0m
+[1.837s] [ 50%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/ur/robot_receive_timeout.cpp.o[0m
+[1.838s] [ 52%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/rtde/rtde_writer.cpp.o[0m
+[1.849s] [ 54%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/default_log_handler.cpp.o[0m
+[1.864s] [ 55%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/example_robot_wrapper.cpp.o[0m
+[1.874s] [ 57%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/helpers.cpp.o[0m
+[1.874s] [ 59%] [32mBuilding CXX object CMakeFiles/urcl.dir/src/log.cpp.o[0m
+[11.720s] [ 60%] [32m[1mLinking CXX shared library liburcl.so[0m
+[13.052s] [ 60%] Built target urcl
+[13.116s] [ 62%] [32mBuilding CXX object examples/CMakeFiles/driver_example.dir/full_driver.cpp.o[0m
+[13.121s] [ 63%] [32mBuilding CXX object examples/CMakeFiles/dashboard_example.dir/dashboard_example.cpp.o[0m
+[13.122s] [ 65%] [32mBuilding CXX object examples/CMakeFiles/rtde_client_example.dir/rtde_client.cpp.o[0m
+[13.130s] [ 67%] [32mBuilding CXX object examples/CMakeFiles/primary_pipeline_calibration_example.dir/primary_pipeline_calibration.cpp.o[0m
+[13.147s] [ 68%] [32mBuilding CXX object examples/CMakeFiles/spline_example.dir/spline_example.cpp.o[0m
+[13.151s] [ 70%] [32mBuilding CXX object examples/CMakeFiles/script_sender_example.dir/script_sender.cpp.o[0m
+[13.152s] [ 72%] [32mBuilding CXX object examples/CMakeFiles/primary_pipeline_example.dir/primary_pipeline.cpp.o[0m
+[13.154s] [ 73%] [32mBuilding CXX object examples/CMakeFiles/trajectory_point_interface_example.dir/trajectory_point_interface.cpp.o[0m
+[13.166s] [ 77%] [32mBuilding CXX object examples/CMakeFiles/instruction_executor.dir/instruction_executor.cpp.o[0m
+[13.167s] [ 77%] [32mBuilding CXX object examples/CMakeFiles/force_mode_example.dir/force_mode_example.cpp.o[0m
+[13.192s] [ 78%] [32mBuilding CXX object examples/CMakeFiles/tool_contact_example.dir/tool_contact_example.cpp.o[0m
+[13.222s] [ 80%] [32mBuilding CXX object examples/CMakeFiles/freedrive_example.dir/freedrive_example.cpp.o[0m
+[14.745s] [ 81%] [32m[1mLinking CXX executable dashboard_example[0m
+[14.988s] [ 81%] Built target dashboard_example
+[15.403s] [ 83%] [32m[1mLinking CXX executable primary_pipeline_example[0m
+[15.445s] [ 85%] [32m[1mLinking CXX executable rtde_client_example[0m
+[15.637s] [ 85%] Built target primary_pipeline_example
+[15.742s] [ 86%] [32m[1mLinking CXX executable tool_contact_example[0m
+[15.841s] [ 86%] Built target rtde_client_example
+[16.033s] [ 88%] [32m[1mLinking CXX executable script_sender_example[0m
+[16.033s] [ 88%] Built target tool_contact_example
+[16.042s] [ 90%] [32m[1mLinking CXX executable driver_example[0m
+[16.287s] [ 90%] Built target script_sender_example
+[16.404s] [ 90%] Built target driver_example
+[16.431s] [ 91%] [32m[1mLinking CXX executable freedrive_example[0m
+[16.453s] [ 93%] [32m[1mLinking CXX executable force_mode_example[0m
+[16.609s] [ 96%] [32m[1mLinking CXX executable instruction_executor[0m
+[16.609s] [ 96%] [32m[1mLinking CXX executable primary_pipeline_calibration_example[0m
+[16.678s] [ 96%] Built target force_mode_example
+[16.737s] [ 96%] Built target freedrive_example
+[16.823s] [ 96%] Built target primary_pipeline_calibration_example
+[16.839s] [ 96%] Built target instruction_executor
+[16.907s] [ 98%] [32m[1mLinking CXX executable trajectory_point_interface_example[0m
+[17.385s] [ 98%] Built target trajectory_point_interface_example
+[17.577s] [100%] [32m[1mLinking CXX executable spline_example[0m
+[17.762s] [100%] Built target spline_example
+[17.802s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --build /home/abdelrahman/Wall-Painting-Robot/build/ur_client_library -- -j22 -l22
+[17.802s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --install /home/abdelrahman/Wall-Painting-Robot/build/ur_client_library
+[17.816s] -- Install configuration: "RelWithDebInfo"
+[17.816s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/lib/liburcl.so
+[17.844s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include
+[17.844s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library
+[17.844s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary
+[17.844s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/.clang-tidy
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/primary_consumer.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/primary_parser.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_message
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_message/version_message.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_message/error_code_message.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/primary_package.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/abstract_primary_consumer.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_message.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/primary_client.h
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_state
+[17.963s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_state/robot_mode_data.h
+[17.964s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_state/kinematics_info.h
+[17.964s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/package_header.h
+[17.964s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/primary/robot_state.h
+[17.964s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/log.h
+[17.964s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/default_log_handler.h
+[17.966s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/helpers.h
+[17.966s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/example_robot_wrapper.h
+[17.967s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/exceptions.h
+[17.968s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/types.h
+[17.969s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control
+[17.969s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control/script_sender.h
+[17.970s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control/motion_primitives.h
+[17.971s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control/script_command_interface.h
+[17.974s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control/trajectory_point_interface.h
+[17.976s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/control/reverse_interface.h
+[17.977s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/queue
+[17.977s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/queue/.clang-tidy
+[17.980s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/queue/atomicops.h
+[17.980s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/queue/LICENSE.md
+[17.980s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/queue/readerwriterqueue.h
+[17.980s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/ur_driver.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/tool_communication.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/dashboard_client.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/robot_receive_timeout.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/calibration_checker.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/instruction_executor.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/datatypes.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/ur/version_information.h
+[17.981s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/rtde_writer.h
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/.clang-tidy
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/rtde_package.h
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/text_message.h
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/control_package_setup_inputs.h
+[17.982s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/rtde_client.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/request_protocol_version.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/data_package.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/get_urcontrol_version.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/rtde_parser.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/control_package_setup_outputs.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/control_package_start.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/control_package_pause.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/rtde/package_header.h
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm
+[17.985s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/package_serializer.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/package.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/shell_consumer.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/parser.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/producer.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/bin_parser.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/tcp_server.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/tcp_socket.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/stream.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/socket_t.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/control_mode.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/include/ur_client_library/comm/pipeline.h
+[17.986s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/lib/cmake/ur_client_library/urclTargets.cmake
+[17.991s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/lib/cmake/ur_client_library/urclTargets-relwithdebinfo.cmake
+[17.991s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/lib/ur_client_library/start_ursim.sh
+[17.991s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/lib/cmake/ur_client_library/ur_client_libraryConfig.cmake
+[17.994s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ur_client_library/package.xml
+[17.997s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ament_index/resource_index/packages/ur_client_library
+[17.998s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ur_client_library/hook/ament_prefix_path.dsv
+[17.998s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ur_client_library/hook/ros_package_path.dsv
+[17.998s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ur_client_library/resources
+[17.998s] -- Installing: /home/abdelrahman/Wall-Painting-Robot/install/ur_client_library/share/ur_client_library/resources/external_control.urscript
+[18.006s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ur_client_library' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --install /home/abdelrahman/Wall-Painting-Robot/build/ur_client_library

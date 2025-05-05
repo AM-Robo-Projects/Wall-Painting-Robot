@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/controller_manager_msgs/rosidl_generator_py/controller_manager_msgs/srv/_list_hardware_interfaces.py

@@ -1,0 +1,29 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from ur_msgs/srv/GetRobotSoftwareVersion.srv
+// generated code does not contain a copyright notice
+
+
+module ur_msgs {
+  module srv {
+    struct GetRobotSoftwareVersion_Request {
+      uint8 structure_needs_at_least_one_member;
+    };
+    struct GetRobotSoftwareVersion_Response {
+      @verbatim (language="comment", text=
+        "Major version number")
+      uint32 major;
+
+      @verbatim (language="comment", text=
+        "Minor version number")
+      uint32 minor;
+
+      @verbatim (language="comment", text=
+        "Bugfix version number")
+      uint32 bugfix;
+
+      @verbatim (language="comment", text=
+        "Build number")
+      uint32 build;
+    };
+  };
+};

@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/joint_trajectory_controller/include/joint_trajectory_controller/joint_trajectory_controller_parameters.hpp

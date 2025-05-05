@@ -1,0 +1,90 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from ur_msgs/srv/SetForceMode.srv
+// generated code does not contain a copyright notice
+
+#include "geometry_msgs/msg/PoseStamped.idl"
+#include "geometry_msgs/msg/Twist.idl"
+#include "geometry_msgs/msg/Wrench.idl"
+
+module ur_msgs {
+  module srv {
+    typedef float float__6[6];
+    module SetForceMode_Request_Constants {
+      @verbatim (language="comment", text=
+        "Type constants:")
+      const uint8 TCP_TO_ORIGIN = 1;
+      const uint8 NO_TRANSFORM = 2;
+      const uint8 TCP_VELOCITY_TO_X_Y = 3;
+    };
+    @verbatim (language="comment", text=
+      "A 6d pose that defines the force frame. Must be static relative to the robot's base frame.")
+    struct SetForceMode_Request {
+      geometry_msgs::msg::PoseStamped task_frame;
+
+      @verbatim (language="comment", text=
+        "1 means that the robot will be compliant in the corresponding axis of the task frame")
+      @default (value=FALSE)
+      boolean selection_vector_x;
+
+      @default (value=FALSE)
+      boolean selection_vector_y;
+
+      @default (value=FALSE)
+      boolean selection_vector_z;
+
+      @default (value=FALSE)
+      boolean selection_vector_rx;
+
+      @default (value=FALSE)
+      boolean selection_vector_ry;
+
+      @default (value=FALSE)
+      boolean selection_vector_rz;
+
+      @verbatim (language="comment", text=
+        "The forces/torques the robot will apply to its environment. For geometric interpretation, please" "\n"
+        "see parameter `type`")
+      geometry_msgs::msg::Wrench wrench;
+
+      @verbatim (language="comment", text=
+        "An integer specifying how the robot interprets the force frame" "\n"
+        "1: The force frame is transformed in a way such that its y-axis is aligned with a vector pointing" "\n"
+        "   from the robot tcp towards the origin of the force frame." "\n"
+        "2: The force frame is not transformed." "\n"
+        "3: The force frame is transformed in a way such that its x-axis is the projection of the robot tcp" "\n"
+        "    velocity vector onto the x-y plane of the force frame.")
+      @default (value=2)
+      @unit (value="1;3")
+      uint8 type;
+
+      @verbatim (language="comment", text=
+        "Maximum allowed tcp speed (relative to the task frame)." "\n"
+        "PLEASE NOTE: This is only relevant for axes marked as compliant in the selection_vector")
+      geometry_msgs::msg::Twist speed_limits;
+
+      @verbatim (language="comment", text=
+        "For non-compliant axes, these values are the maximum allowed deviation along/about an axis" "\n"
+        "between the actual tcp position and the one set by the program.")
+      @default (value="(0.01, 0.01, 0.01, 0.01, 0.01, 0.01)")
+      float__6 deviation_limits;
+
+      @verbatim (language="comment", text=
+        "Force mode damping factor. Sets the damping parameter in force mode. In range, default value is 0.025" "\n"
+        "A value of 1 is full damping, so the robot will decelerate quickly if no force is present. A value of 0" "\n"
+        "is no damping, here the robot will maintain the speed.")
+      @default (value=0.025)
+      @unit (value="0;1")
+      float damping_factor;
+
+      @verbatim (language="comment", text=
+        "Force mode gain scaling factor. Scales the gain in force mode. scaling parameter is in range, default is 0.5." "\n"
+        "A value larger than 1 can make force mode unstable, e.g. in case of collisions or pushing against hard surfaces.")
+      @default (value=0.5)
+      @unit (value="0;2")
+      float gain_scaling;
+    };
+    struct SetForceMode_Response {
+      boolean success;
+    };
+  };
+};

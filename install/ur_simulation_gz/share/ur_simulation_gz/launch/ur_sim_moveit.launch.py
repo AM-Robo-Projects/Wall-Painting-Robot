@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/src/ur_gz/src/ur_simulation_gz/ur_simulation_gz/launch/ur_sim_moveit.launch.py

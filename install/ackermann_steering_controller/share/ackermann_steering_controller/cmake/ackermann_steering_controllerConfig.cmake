@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/ackermann_steering_controller/ament_cmake_core/ackermann_steering_controllerConfig.cmake

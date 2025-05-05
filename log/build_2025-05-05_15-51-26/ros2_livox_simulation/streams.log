@@ -1,0 +1,262 @@
+[0.199s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake /home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2 -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation
+[0.241s] -- The C compiler identification is GNU 11.4.0
+[0.291s] -- The CXX compiler identification is GNU 11.4.0
+[0.297s] -- Detecting C compiler ABI info
+[0.349s] -- Detecting C compiler ABI info - done
+[0.354s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.354s] -- Detecting C compile features
+[0.354s] -- Detecting C compile features - done
+[0.357s] -- Detecting CXX compiler ABI info
+[0.492s] -- Detecting CXX compiler ABI info - done
+[0.496s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.496s] -- Detecting CXX compile features
+[0.497s] -- Detecting CXX compile features - done
+[0.498s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.618s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.679s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.709s] -- Found rclcpp: 16.0.12 (/opt/ros/humble/share/rclcpp/cmake)
+[0.752s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.756s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.765s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.782s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.798s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.845s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.847s] -- Found rmw_fastrtps_cpp: 6.2.7 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[1.128s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[1.190s] -- Found FastRTPS: /opt/ros/humble/include  
+[1.255s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.272s] -- Looking for pthread.h
+[1.568s] -- Looking for pthread.h - found
+[1.569s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.845s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[1.846s] -- Found Threads: TRUE  
+[1.985s] -- Found gazebo_dev: 3.9.0 (/opt/ros/humble/share/gazebo_dev/cmake)
+[1.994s] -- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.2") 
+[2.001s] -- Checking for module 'bullet>=2.82'
+[2.033s] --   Found bullet, version 3.05
+[2.313s] -- Found fcl: /usr/include (found suitable version "0.7.0", minimum required is "0.5.0") 
+[2.477s] -- Found assimp: /usr/include (found version "5.2.0") 
+[2.499s] -- Found DART: /usr/include (Required is at least version "6.6") found components: dart 
+[2.533s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found suitable version "1.74.0", minimum required is "1.40.0") found components: thread system filesystem program_options regex iostreams date_time 
+[2.566s] -- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so (found version "3.12.4") 
+[2.566s] -- Looking for ignition-math6 -- found version 6.15.1
+[2.573s] -- Searching for dependencies of ignition-math6
+[2.574s] -- Looking for OGRE...
+[2.575s] -- OGRE_PREFIX_WATCH changed.
+[2.581s] -- Checking for module 'OGRE'
+[2.602s] --   Found OGRE, version 1.9.0
+[2.646s] -- Found Ogre Ghadamon (1.9.0)
+[2.654s] -- Found OGRE: optimized;/usr/lib/x86_64-linux-gnu/libOgreMain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreMain.so
+[2.660s] -- Looking for OGRE_Paging...
+[2.674s] -- Found OGRE_Paging: optimized;/usr/lib/x86_64-linux-gnu/libOgrePaging.so;debug;/usr/lib/x86_64-linux-gnu/libOgrePaging.so
+[2.675s] -- Looking for OGRE_Terrain...
+[2.691s] -- Found OGRE_Terrain: optimized;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so
+[2.691s] -- Looking for OGRE_Property...
+[2.706s] -- Found OGRE_Property: optimized;/usr/lib/x86_64-linux-gnu/libOgreProperty.so;debug;/usr/lib/x86_64-linux-gnu/libOgreProperty.so
+[2.706s] -- Looking for OGRE_RTShaderSystem...
+[2.710s] -- Found OGRE_RTShaderSystem: optimized;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so;debug;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so
+[2.711s] -- Looking for OGRE_Volume...
+[2.721s] -- Found OGRE_Volume: optimized;/usr/lib/x86_64-linux-gnu/libOgreVolume.so;debug;/usr/lib/x86_64-linux-gnu/libOgreVolume.so
+[2.721s] -- Looking for OGRE_Overlay...
+[2.733s] -- Found OGRE_Overlay: optimized;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so;debug;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so
+[3.052s] -- Looking for ignition-math6 -- found version 6.15.1
+[3.054s] -- Looking for ignition-transport8 -- found version 8.2.1
+[3.055s] -- Searching for dependencies of ignition-transport8
+[3.085s] -- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so (found suitable version "3.12.4", minimum required is "3") 
+[3.104s] -- Config-file not installed for ZeroMQ -- checking for pkg-config
+[3.119s] -- Checking for module 'libzmq >= 4'
+[3.179s] --   Found libzmq , version 4.3.4
+[3.316s] -- Found ZeroMQ: TRUE (Required is at least version "4") 
+[3.344s] -- Checking for module 'uuid'
+[3.385s] --   Found uuid, version 2.37.2
+[3.452s] -- Found UUID: TRUE  
+[3.459s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[3.459s] -- Searching for dependencies of ignition-msgs5
+[3.495s] -- Looking for ignition-math6 -- found version 6.15.1
+[3.506s] -- Checking for module 'tinyxml2'
+[3.542s] --   Found tinyxml2, version 9.0.0
+[3.683s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[3.684s] -- Looking for ignition-common3 -- found version 3.14.0
+[3.685s] -- Searching for dependencies of ignition-common3
+[3.686s] -- Looking for dlfcn.h - found
+[3.689s] -- Looking for libdl - found
+[3.692s] -- Found DL: TRUE  
+[3.716s] -- Found tinyobjloader: /usr/lib/x86_64-linux-gnu/cmake/tinyobjloader/tinyobjloader-config.cmake (found version "2.0.0") 
+[3.717s] -- Searching for <ignition-common3> component [graphics]
+[3.722s] -- Looking for ignition-common3-graphics -- found version 3.14.0
+[3.722s] -- Searching for dependencies of ignition-common3-graphics
+[3.722s] -- Looking for ignition-math6 -- found version 6.15.1
+[3.728s] -- Looking for ignition-fuel_tools4 -- found version 4.4.0
+[3.730s] -- Searching for dependencies of ignition-fuel_tools4
+[3.945s] -- Found CURL: /usr/lib/x86_64-linux-gnu/libcurl.so (found version "7.81.0")  
+[3.962s] -- Checking for module 'jsoncpp'
+[3.996s] --   Found jsoncpp, version 1.9.5
+[4.108s] -- Found JSONCPP: TRUE  
+[4.121s] -- Checking for module 'libzip'
+[4.167s] --   Found libzip, version 1.7.3
+[4.246s] -- Found ZIP: TRUE  
+[4.246s] -- Looking for ignition-common3 -- found version 3.14.0
+[4.246s] -- Looking for ignition-math6 -- found version 6.15.1
+[4.246s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[4.257s] -- Gazebo version: 11.10
+[4.257s] -- Checking for module 'tbb'
+[4.297s] --   Found tbb, version 2021.5.0
+[4.358s] -- Found gazebo_ros: 3.9.0 (/opt/ros/humble/share/gazebo_ros/cmake)
+[4.373s] -- Found sensor_msgs: 4.8.0 (/opt/ros/humble/share/sensor_msgs/cmake)
+[4.406s] -- Found tf2_ros: 0.25.12 (/opt/ros/humble/share/tf2_ros/cmake)
+[4.521s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[4.537s] -- Found livox_ros_driver2: 1.0.0 (/home/abdelrahman/ws_livox/install/livox_ros_driver2/share/livox_ros_driver2/cmake)
+[4.591s] -- Checking for module 'eigen3'
+[4.608s] --   Found eigen3, version 3.4.0
+[4.650s] -- Found Eigen: /usr/include/eigen3 (Required is at least version "3.1") 
+[4.650s] -- Eigen found (include: /usr/include/eigen3, version: 3.4.0)
+[4.681s] -- Checking for module 'flann'
+[4.702s] --   Found flann, version 1.9.1
+[4.763s] -- Found FLANN: /usr/lib/x86_64-linux-gnu/libflann_cpp.so  
+[4.763s] -- FLANN found (include: /usr/include, lib: /usr/lib/x86_64-linux-gnu/libflann_cpp.so)
+[8.009s] -- Checking for module 'libusb-1.0'
+[8.068s] --   Found libusb-1.0, version 1.0.25
+[8.229s] -- Found libusb: /usr/lib/x86_64-linux-gnu/libusb-1.0.so  
+[8.232s] -- OpenNI found (version: 1.5.4.0, include: /usr/include/ni, lib: /usr/lib/libOpenNI.so;libusb::libusb)
+[8.705s] -- OpenNI2 found (version: 2.2.0.33, include: /usr/include/openni2, lib: /usr/lib/x86_64-linux-gnu/libOpenNI2.so;libusb::libusb)
+[9.588s] -- Eigen found (include: /usr/include/eigen3, version: 3.4.0)
+[9.626s] -- OpenNI found (version: 1.5.4.0, include: /usr/include/ni, lib: /usr/lib/libOpenNI.so;libusb::libusb)
+[9.644s] -- OpenNI2 found (version: 2.2.0.33, include: /usr/include/openni2, lib: /usr/lib/x86_64-linux-gnu/libOpenNI2.so;libusb::libusb)
+[10.426s] -- Found Qhull version 8.0.2
+[11.047s] -- OpenNI found (version: 1.5.4.0, include: /usr/include/ni, lib: /usr/lib/libOpenNI.so;libusb::libusb)
+[12.176s] -- Found PCL_COMMON: /usr/lib/x86_64-linux-gnu/libpcl_common.so  
+[12.179s] -- Found PCL_KDTREE: /usr/lib/x86_64-linux-gnu/libpcl_kdtree.so  
+[12.196s] -- Found PCL_OCTREE: /usr/lib/x86_64-linux-gnu/libpcl_octree.so  
+[12.202s] -- Found PCL_SEARCH: /usr/lib/x86_64-linux-gnu/libpcl_search.so  
+[12.214s] -- Found PCL_SAMPLE_CONSENSUS: /usr/lib/x86_64-linux-gnu/libpcl_sample_consensus.so  
+[12.228s] -- Found PCL_FILTERS: /usr/lib/x86_64-linux-gnu/libpcl_filters.so  
+[12.233s] -- Found PCL_2D: /usr/include/pcl-1.12  
+[12.238s] -- Found PCL_GEOMETRY: /usr/include/pcl-1.12  
+[12.250s] -- Found PCL_IO: /usr/lib/x86_64-linux-gnu/libpcl_io.so  
+[12.263s] -- Found PCL_FEATURES: /usr/lib/x86_64-linux-gnu/libpcl_features.so  
+[12.283s] -- Found PCL_ML: /usr/lib/x86_64-linux-gnu/libpcl_ml.so  
+[12.286s] -- Found PCL_SEGMENTATION: /usr/lib/x86_64-linux-gnu/libpcl_segmentation.so  
+[12.306s] -- Found PCL_VISUALIZATION: /usr/lib/x86_64-linux-gnu/libpcl_visualization.so  
+[12.311s] -- Found PCL_SURFACE: /usr/lib/x86_64-linux-gnu/libpcl_surface.so  
+[12.330s] -- Found PCL_REGISTRATION: /usr/lib/x86_64-linux-gnu/libpcl_registration.so  
+[12.338s] -- Found PCL_KEYPOINTS: /usr/lib/x86_64-linux-gnu/libpcl_keypoints.so  
+[12.341s] -- Found PCL_TRACKING: /usr/lib/x86_64-linux-gnu/libpcl_tracking.so  
+[12.366s] -- Found PCL_RECOGNITION: /usr/lib/x86_64-linux-gnu/libpcl_recognition.so  
+[12.366s] -- Found PCL_STEREO: /usr/lib/x86_64-linux-gnu/libpcl_stereo.so  
+[12.380s] -- Found PCL_APPS: /usr/lib/x86_64-linux-gnu/libpcl_apps.so  
+[12.380s] -- Found PCL_IN_HAND_SCANNER: /usr/include/pcl-1.12  
+[12.391s] -- Found PCL_MODELER: /usr/include/pcl-1.12  
+[12.394s] -- Found PCL_POINT_CLOUD_EDITOR: /usr/include/pcl-1.12  
+[12.394s] -- Found PCL_OUTOFCORE: /usr/lib/x86_64-linux-gnu/libpcl_outofcore.so  
+[12.394s] -- Found PCL_PEOPLE: /usr/lib/x86_64-linux-gnu/libpcl_people.so  
+[12.467s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: chrono 
+[12.509s] -- Found ament_lint_auto: 0.12.12 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[12.904s] -- Added test 'copyright' to check source files copyright and LICENSE
+[12.915s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[12.916s] -- Configured cppcheck include dirs: /home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/include
+[12.917s] -- Configured cppcheck exclude dirs and/or files: 
+[12.928s] -- Added test 'cpplint' to check C / C++ code against the Google style
+[12.928s] -- Configured cpplint exclude dirs and/or files: 
+[12.931s] -- Added test 'flake8' to check Python code syntax and style conventions
+[12.935s] -- Added test 'lint_cmake' to check CMake code style
+[12.937s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[12.949s] -- Added test 'uncrustify' to check C / C++ code style
+[12.949s] -- Configured uncrustify additional arguments: 
+[12.956s] -- Added test 'xmllint' to check XML markup files
+[12.958s] -- Configuring done
+[12.988s] -- Generating done
+[13.048s] -- Build files have been written to: /home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation
+[13.124s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake /home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2 -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation
+[13.124s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --build /home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation -- -j22 -l22
+[13.388s] [ 66%] [32mBuilding CXX object CMakeFiles/ros2_livox.dir/src/livox_points_plugin.cpp.o[0m
+[13.392s] [ 66%] [32mBuilding CXX object CMakeFiles/ros2_livox.dir/src/livox_ode_multiray_shape.cpp.o[0m
+[18.598s] In file included from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+[18.598s]                  from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[18.598s] [01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:47:6:[m[K [01;35m[Kwarning: [m[K#warning POINT_CLOUD_DEPRECATION_MESSAGE [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wcpp-Wcpp]8;;[m[K]
+[18.598s]    47 | #    [01;35m[Kwarning[m[K POINT_CLOUD_DEPRECATION_MESSAGE
+[18.598s]       |      [01;35m[K^~~~~~~[m[K
+[24.279s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:[m[K In member function ‘[01m[Kvirtual void gazebo::physics::LivoxOdeMultiRayShape::Init()[m[K’:
+[24.279s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:191:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KyawAngle[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[24.279s]   191 |     double [01;35m[KyawAngle[m[K, pitchAngle;
+[24.279s]       |            [01;35m[K^~~~~~~~[m[K
+[24.280s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:191:22:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KpitchAngle[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[24.280s]   191 |     double yawAngle, [01;35m[KpitchAngle[m[K;
+[24.280s]       |                      [01;35m[K^~~~~~~~~~[m[K
+[24.280s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:193:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KyDiff[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.280s]   193 |     double [01;35m[KyDiff[m[K;
+[24.280s]       |            [01;35m[K^~~~~[m[K
+[24.280s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:195:9:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KhorzSamples[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.281s]   195 |     int [01;35m[KhorzSamples[m[K = 1;
+[24.281s]       |         [01;35m[K^~~~~~~~~~~[m[K
+[24.281s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:198:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KpDiff[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.281s]   198 |     double [01;35m[KpDiff[m[K = 0;
+[24.281s]       |            [01;35m[K^~~~~[m[K
+[24.281s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:199:9:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KvertSamples[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.281s]   199 |     int [01;35m[KvertSamples[m[K = 1;
+[24.282s]       |         [01;35m[K^~~~~~~~~~~[m[K
+[24.282s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:203:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KminRange[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.282s]   203 |     double [01;35m[KminRange[m[K, maxRange;
+[24.282s]       |            [01;35m[K^~~~~~~~[m[K
+[24.282s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_ode_multiray_shape.cpp:203:22:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[KmaxRange[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[24.282s]   203 |     double minRange, [01;35m[KmaxRange[m[K;
+[24.282s]       |                      [01;35m[K^~~~~~~~[m[K
+[29.018s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:[m[K In member function ‘[01m[Kvirtual void gazebo::LivoxPointsPlugin::OnNewLaserScans()[m[K’:
+[29.019s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:214:22:[m[K [01;35m[Kwarning: [m[K‘[01m[Kbool sensor_msgs::convertPointCloudToPointCloud2(const PointCloud&, sensor_msgs::msg::PointCloud2&)[m[K’ is deprecated: PointCloud is deprecated as of Foxy in favor of sensor_msgs/PointCloud2. [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wdeprecated-declarations-Wdeprecated-declarations]8;;[m[K]
+[29.019s]   214 |         sensor_msgs::[01;35m[KconvertPointCloudToPointCloud2[m[K(cloud, cloud2);
+[29.019s]       |                      [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[29.019s] In file included from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+[29.019s]                  from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[29.019s] [01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:81:20:[m[K [01;36m[Knote: [m[Kdeclared here
+[29.019s]    81 | static inline bool [01;36m[KconvertPointCloudToPointCloud2[m[K(
+[29.019s]       |                    [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[29.019s] [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:214:52:[m[K [01;35m[Kwarning: [m[K‘[01m[Kbool sensor_msgs::convertPointCloudToPointCloud2(const PointCloud&, sensor_msgs::msg::PointCloud2&)[m[K’ is deprecated: PointCloud is deprecated as of Foxy in favor of sensor_msgs/PointCloud2. [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wdeprecated-declarations-Wdeprecated-declarations]8;;[m[K]
+[29.019s]   214 |         [01;35m[Ksensor_msgs::convertPointCloudToPointCloud2(cloud, cloud2)[m[K;
+[29.019s]       |         [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~[m[K
+[29.019s] In file included from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/include/ros2_livox/livox_points_plugin.h:14[m[K,
+[29.019s]                  from [01m[K/home/abdelrahman/Wall-Painting-Robot/src/livox_laser_simulation_ros2/src/livox_points_plugin.cpp:12[m[K:
+[29.019s] [01m[K/opt/ros/humble/include/sensor_msgs/sensor_msgs/point_cloud_conversion.hpp:81:20:[m[K [01;36m[Knote: [m[Kdeclared here
+[29.019s]    81 | static inline bool [01;36m[KconvertPointCloudToPointCloud2[m[K(
+[29.019s]       |                    [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[34.119s] [100%] [32m[1mLinking CXX shared library libros2_livox.so[0m
+[34.803s] [100%] Built target ros2_livox
+[34.815s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --build /home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation -- -j22 -l22
+[34.816s] Invoking command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --install /home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation
+[34.823s] -- Install configuration: ""
+[34.823s] -- Execute custom install script
+[34.824s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/include/ros2_livox/csv_reader.hpp
+[34.833s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/include/ros2_livox/livox_ode_multiray_shape.h
+[34.840s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/include/ros2_livox/livox_points_plugin.h
+[34.847s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/lib/libros2_livox.so
+[34.856s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/library_path.sh
+[34.863s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/library_path.dsv
+[34.872s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/mid40.csv
+[34.878s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/mid70.csv
+[34.886s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/mid360.csv
+[34.893s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/tele.csv
+[34.899s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/horizon.csv
+[34.907s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/HAP.csv
+[34.915s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/scan_mode/avia.csv
+[34.924s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/mid40.xacro
+[34.930s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/mid70.xacro
+[34.937s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/mid360.xacro
+[34.944s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/tele.xacro
+[34.952s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/horizon.xacro
+[34.959s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/HAP.xacro
+[34.966s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/urdf/avia.xacro
+[34.976s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ament_index/resource_index/package_run_dependencies/ros2_livox_simulation
+[34.982s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ament_index/resource_index/parent_prefix_path/ros2_livox_simulation
+[34.992s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/ament_prefix_path.sh
+[34.999s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/ament_prefix_path.dsv
+[35.006s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/path.sh
+[35.013s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/environment/path.dsv
+[35.020s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/local_setup.bash
+[35.028s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/local_setup.sh
+[35.036s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/local_setup.zsh
+[35.044s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/local_setup.dsv
+[35.050s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/package.dsv
+[35.058s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ament_index/resource_index/packages/ros2_livox_simulation
+[35.066s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/cmake/ament_cmake_export_libraries-extras.cmake
+[35.072s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/cmake/ros2_livox_simulationConfig.cmake
+[35.080s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/cmake/ros2_livox_simulationConfig-version.cmake
+[35.087s] -- Symlinking: /home/abdelrahman/Wall-Painting-Robot/install/ros2_livox_simulation/share/ros2_livox_simulation/package.xml
+[35.097s] Invoked command in '/home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/abdelrahman/Wall-Painting-Robot/install/rqt_joint_trajectory_controller:/home/abdelrahman/Wall-Painting-Robot/install/rqt_controller_manager:/home/abdelrahman/Wall-Painting-Robot/install/ros2controlcli:/home/abdelrahman/Wall-Painting-Robot/install/ros2_controllers_test_nodes:/opt/ros/humble /usr/bin/cmake --install /home/abdelrahman/Wall-Painting-Robot/build/ros2_livox_simulation

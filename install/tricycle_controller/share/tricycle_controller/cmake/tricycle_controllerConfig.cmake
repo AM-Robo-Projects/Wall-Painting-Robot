@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/tricycle_controller/ament_cmake_core/tricycle_controllerConfig.cmake

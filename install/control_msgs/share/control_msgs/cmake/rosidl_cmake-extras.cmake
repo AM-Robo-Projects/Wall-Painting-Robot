@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/control_msgs/rosidl_cmake/rosidl_cmake-extras.cmake

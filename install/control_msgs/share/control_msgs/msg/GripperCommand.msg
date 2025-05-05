@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/control_msgs/control_msgs/msg/GripperCommand.msg

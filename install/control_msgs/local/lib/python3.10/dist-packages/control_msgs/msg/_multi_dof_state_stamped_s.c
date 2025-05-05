@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/control_msgs/rosidl_generator_py/control_msgs/msg/_multi_dof_state_stamped_s.c

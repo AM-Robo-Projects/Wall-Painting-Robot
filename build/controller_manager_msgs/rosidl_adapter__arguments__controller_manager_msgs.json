@@ -1,0 +1,19 @@
+{
+  "package_name": "controller_manager_msgs",
+  "non_idl_tuples": [
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:msg/ControllerState.msg",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:msg/ChainConnection.msg",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:msg/HardwareComponentState.msg",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:msg/HardwareInterface.msg",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ConfigureController.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ListControllers.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ListControllerTypes.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ListHardwareComponents.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ListHardwareInterfaces.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/LoadController.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/ReloadControllerLibraries.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/SetHardwareComponentState.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/SwitchController.srv",
+    "/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/controller_manager_msgs:srv/UnloadController.srv"
+  ]
+}

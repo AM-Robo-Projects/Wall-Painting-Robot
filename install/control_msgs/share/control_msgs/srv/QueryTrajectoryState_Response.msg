@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/control_msgs/rosidl_cmake/srv/QueryTrajectoryState_Response.msg

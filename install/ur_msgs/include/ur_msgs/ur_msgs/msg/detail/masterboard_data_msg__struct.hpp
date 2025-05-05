@@ -1,0 +1,1 @@
+/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_generator_cpp/ur_msgs/msg/detail/masterboard_data_msg__struct.hpp
