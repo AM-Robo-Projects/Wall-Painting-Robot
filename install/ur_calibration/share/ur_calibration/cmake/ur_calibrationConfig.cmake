@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_calibration/ament_cmake_core/ur_calibrationConfig.cmake

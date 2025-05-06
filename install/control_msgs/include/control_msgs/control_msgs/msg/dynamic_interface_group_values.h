@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/control_msgs/rosidl_generator_c/control_msgs/msg/dynamic_interface_group_values.h

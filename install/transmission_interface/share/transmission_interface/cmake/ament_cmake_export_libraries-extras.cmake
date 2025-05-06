@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/transmission_interface/ament_cmake_export_libraries/ament_cmake_export_libraries-extras.cmake

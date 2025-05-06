@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/mecanum_drive_controller/ament_cmake_core/mecanum_drive_controllerConfig.cmake

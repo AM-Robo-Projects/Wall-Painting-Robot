@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_typesupport_introspection_cpp/ur_msgs/srv/detail/set_io__rosidl_typesupport_introspection_cpp.hpp

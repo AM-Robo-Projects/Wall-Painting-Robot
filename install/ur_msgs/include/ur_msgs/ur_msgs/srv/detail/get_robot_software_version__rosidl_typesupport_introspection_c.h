@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_typesupport_introspection_c/ur_msgs/srv/detail/get_robot_software_version__rosidl_typesupport_introspection_c.h

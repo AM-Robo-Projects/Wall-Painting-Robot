@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/joint_trajectory_controller/include/joint_trajectory_controller/interpolation_methods.hpp

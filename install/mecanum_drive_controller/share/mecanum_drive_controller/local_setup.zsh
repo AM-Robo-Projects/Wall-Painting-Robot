@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/mecanum_drive_controller/ament_cmake_environment_hooks/local_setup.zsh

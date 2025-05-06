@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/controller_interface/ament_cmake_core/controller_interfaceConfig-version.cmake

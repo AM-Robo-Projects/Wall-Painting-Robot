@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/gpio_controllers/ament_cmake_environment_hooks/local_setup.bash

@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/ament_cmake_core/ur_msgsConfig.cmake

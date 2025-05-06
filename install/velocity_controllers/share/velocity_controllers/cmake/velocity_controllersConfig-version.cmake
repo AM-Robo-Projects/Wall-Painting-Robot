@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/velocity_controllers/ament_cmake_core/velocity_controllersConfig-version.cmake

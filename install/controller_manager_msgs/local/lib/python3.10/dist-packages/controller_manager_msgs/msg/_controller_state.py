@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/controller_manager_msgs/rosidl_generator_py/controller_manager_msgs/msg/_controller_state.py

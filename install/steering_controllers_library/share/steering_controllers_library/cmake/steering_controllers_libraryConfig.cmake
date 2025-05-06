@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/steering_controllers_library/ament_cmake_core/steering_controllers_libraryConfig.cmake

@@ -1,9 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/uninstall.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/ros2_control_test_assets_uninstall.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/test.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/edit_cache.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/rebuild_cache.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/list_install_components.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/install.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/install/local.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ros2_control_test_assets/CMakeFiles/install/strip.dir

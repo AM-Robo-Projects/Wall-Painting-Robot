@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/mecanum_drive_controller/include/mecanum_drive_controller/visibility_control.h

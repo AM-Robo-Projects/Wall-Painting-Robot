@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/kinematics_interface/kinematics_interface_kdl/include/kinematics_interface_kdl/kinematics_interface_kdl.hpp

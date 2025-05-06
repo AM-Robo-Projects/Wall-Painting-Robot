@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_controllers/include/ur_controllers/freedrive_mode_controller_parameters.hpp

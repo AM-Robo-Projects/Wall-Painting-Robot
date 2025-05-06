@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/controller_manager_msgs/ament_cmake_export_targets/ament_cmake_export_targets-extras.cmake

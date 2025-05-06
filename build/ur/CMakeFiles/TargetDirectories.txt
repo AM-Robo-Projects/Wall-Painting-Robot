@@ -1,9 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/uninstall.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/ur_uninstall.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/test.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/edit_cache.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/rebuild_cache.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/list_install_components.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/install.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/install/local.dir
-/home/abdelrahman/Wall-Painting-Robot/build/ur/CMakeFiles/install/strip.dir

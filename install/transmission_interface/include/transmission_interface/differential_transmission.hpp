@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_control/transmission_interface/include/transmission_interface/differential_transmission.hpp

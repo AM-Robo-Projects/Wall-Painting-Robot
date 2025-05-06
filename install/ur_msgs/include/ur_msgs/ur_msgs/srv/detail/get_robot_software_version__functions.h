@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_generator_c/ur_msgs/srv/detail/get_robot_software_version__functions.h

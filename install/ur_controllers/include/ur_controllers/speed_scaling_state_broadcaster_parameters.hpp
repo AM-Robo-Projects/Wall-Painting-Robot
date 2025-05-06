@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_controllers/include/ur_controllers/speed_scaling_state_broadcaster_parameters.hpp

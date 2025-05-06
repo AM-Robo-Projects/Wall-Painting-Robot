@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/ur_msgs/rosidl_generator_py/ur_msgs/_ur_msgs_s.ep.rosidl_typesupport_introspection_c.c

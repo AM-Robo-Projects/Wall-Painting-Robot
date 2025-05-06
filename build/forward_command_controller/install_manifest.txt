@@ -1,3 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/install/forward_command_controller/lib/libforward_command_controller.so
-/home/abdelrahman/Wall-Painting-Robot/install/forward_command_controller/share/forward_command_controller/cmake/export_forward_command_controllerExport.cmake
-/home/abdelrahman/Wall-Painting-Robot/install/forward_command_controller/share/forward_command_controller/cmake/export_forward_command_controllerExport-noconfig.cmake

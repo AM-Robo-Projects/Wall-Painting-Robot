@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/gpio_controllers/include/gpio_controllers/gpio_command_controller.hpp

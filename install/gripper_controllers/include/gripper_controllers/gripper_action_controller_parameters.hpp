@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/gripper_controllers/include/gripper_controllers/gripper_action_controller_parameters.hpp

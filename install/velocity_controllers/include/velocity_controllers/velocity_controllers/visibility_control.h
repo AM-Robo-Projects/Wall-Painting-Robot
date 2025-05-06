@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/velocity_controllers/include/velocity_controllers/visibility_control.h

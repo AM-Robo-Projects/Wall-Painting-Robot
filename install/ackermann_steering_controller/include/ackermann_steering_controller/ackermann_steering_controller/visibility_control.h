@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/ackermann_steering_controller/include/ackermann_steering_controller/visibility_control.h

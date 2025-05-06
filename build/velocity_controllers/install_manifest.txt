@@ -1,3 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/install/velocity_controllers/lib/libvelocity_controllers.so
-/home/abdelrahman/Wall-Painting-Robot/install/velocity_controllers/share/velocity_controllers/cmake/export_velocity_controllersExport.cmake
-/home/abdelrahman/Wall-Painting-Robot/install/velocity_controllers/share/velocity_controllers/cmake/export_velocity_controllersExport-noconfig.cmake

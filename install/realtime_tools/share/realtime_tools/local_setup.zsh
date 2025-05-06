@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/build/realtime_tools/ament_cmake_environment_hooks/local_setup.zsh

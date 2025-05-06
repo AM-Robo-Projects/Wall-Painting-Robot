@@ -1,1 +1,0 @@
-/home/abdelrahman/Wall-Painting-Robot/src/ros_ur_driver/src/ros2_controllers/tricycle_controller/include/tricycle_controller/traction_limiter.hpp
