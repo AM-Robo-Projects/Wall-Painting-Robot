@@ -46,7 +46,7 @@
    <xacro:arg name="fake_sensor_commands" default="false" />
    <xacro:arg name="sim_gazebo" default="false" />
    <xacro:arg name="sim_ignition" default="false" />
-   <xacro:arg name="simulation_controllers" default="" />
+   <xacro:arg name="simulation_controllers" default="$(find ur_description)/config/ur_gazebo_controllers.yaml"/>
 
    <!-- initial position for simulations (Fake Hardware, Gazebo, Ignition) -->
    <xacro:arg name="initial_positions_file" default="$(find ur_description)/config/initial_positions.yaml"/>
@@ -78,11 +78,12 @@
        </collision>
      </link>
 
-     <joint name="ground_plane_joint" type="fixed">
-       <origin xyz="0 0 -0.01" rpy="0 0 0"/>
-       <parent link="world"/>
-       <child link="ground_plane"/>
+     <joint name="world_to_base" type="fixed">
+      <parent link="world"/>
+      <child link="ground_plane"/> <!-- replace with actual base link name -->
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
      </joint>
+
    </xacro:if>
 
    <!-- arm -->
@@ -126,11 +127,17 @@
      <origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
    </xacro:ur_robot>
   
-  <xacro:include filename="$(find ros2_livox_simulation)/urdf/mid360.xacro" />
+    <joint name="world_to_lidar_mount" type="fixed">
+        <parent link="world"/>
+        <child link="lidar_mount"/>
+        <origin xyz="1.0 1.0 0.5" rpy="0 0 0"/>
+    </joint>
 
-  <xacro:mid360 name="livox" parent="world" topic="mid360">
-    <origin xyz="0 2 0.025" rpy="0 0 0"/>
-  </xacro:mid360>
+    <xacro:include filename="$(find ros2_livox_simulation)/urdf/mid360.xacro"/>
+
+    <xacro:mid360 name="livox" parent="lidar_mount" topic="mid360">
+        <origin xyz="1.0 1.0 0.5" rpy="0 0 0"/>
+    </xacro:mid360>
 
    <xacro:if value="$(arg sim_gazebo)">
     <!-- Gazebo plugins -->
@@ -143,6 +150,7 @@
         <parameters>$(arg simulation_controllers)</parameters>
       </plugin>
     </gazebo>
+
   </xacro:if>
 
   <xacro:if value="$(arg sim_ignition)">
@@ -155,6 +163,7 @@
         <controller_manager_node_name>$(arg tf_prefix)controller_manager</controller_manager_node_name>
       </plugin>
     </gazebo>
+
   </xacro:if>
 
   
