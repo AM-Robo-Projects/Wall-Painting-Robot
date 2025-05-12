@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ur5e_controller</name>
+  <version>0.0.1</version>
+  <description>Controller package for UR5e robot</description>
+  <maintainer email="user@todo.todo">user</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>ur_dashboard_msgs</depend>
+  <depend>ur_msgs</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>controller_manager_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>livox_ros_driver2</depend>
+  <!-- Add these for point cloud transformations -->
+  <depend>tf2_sensor_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
+  
+  <!-- Python dependencies - using format that rosdep understands -->
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  
+  <!-- Add transforms3d as a pip dependency (non-rosdep) -->
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-pip</exec_depend>
+  
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <pip_requirements>requirements.txt</pip_requirements>
+  </export>
+</package>

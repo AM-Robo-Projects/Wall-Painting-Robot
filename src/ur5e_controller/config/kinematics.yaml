@@ -1,0 +1,66 @@
+ur_manipulator:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.005
+  position_only_ik: False
+
+  # Inserted calibration
+  shoulder:
+    x: 0
+    y: 0
+    z: 0.16256343491290598
+    roll: -0
+    pitch: 0
+    yaw: -3.3831304486814026e-08
+  upper_arm:
+    x: 0.0001975280953746596
+    y: 0
+    z: 0
+    roll: 1.5701556867872521
+    pitch: 0
+    yaw: 2.5865378659124668e-06
+  forearm:
+    x: -0.42520353210274048
+    y: 0
+    z: 0
+    roll: 3.1387346295830265
+    pitch: -3.1413378723672682
+    yaw: -3.1415857038511148
+  wrist_1:
+    x: -0.39266103359200089
+    y: -0.00058861333218077354
+    z: 0.13376992145348063
+    roll: 0.0044001635567987064
+    pitch: -0.00089303369779299483
+    yaw: 2.3068878084062376e-06
+  wrist_2:
+    x: 0.00011098242964022372
+    y: -0.099706152963343717
+    z: 7.705209830915008e-05
+    roll: 1.570023535139814
+    pitch: 0
+    yaw: 9.6994636943764666e-07
+  wrist_3:
+    x: 8.7753971102599672e-05
+    y: 0.099628895005778914
+    z: 5.8720795937081306e-06
+    roll: 1.5708552663182804
+    pitch: 3.1415926535897931
+    yaw: 3.1415926363905684
+  hash: calib_12788084448423163542
+
+# Optional: Keep other groups if needed
+ur5e:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.1
+  kinematics_solver_attempts: 3
+
+manipulator_kinematics:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.1
+  kinematics_solver_attempts: 3
+
+collision_check:
+  rate: 50
