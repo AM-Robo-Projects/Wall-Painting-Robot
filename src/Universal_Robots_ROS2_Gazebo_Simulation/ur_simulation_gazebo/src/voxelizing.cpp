@@ -5,7 +5,17 @@
 #include <iostream>
 
 
+
+
+
+
+
+
+
 int main  ()
+
+
+
 {
     pcl::PCLPointCloud2::Ptr cloud(new pcl::PCLPointCloud2);
     pcl::PCLPointCloud2::Ptr voxel_cloud(new pcl::PCLPointCloud2);

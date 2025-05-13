@@ -11,9 +11,12 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/common/common.h>
 #include <geometry_msgs/msg/point32.hpp>
+#include <pcl/filters/crop_box.h>
+#include <std_msgs/msg/float32_multi_array.hpp>
 
 
 using PointT = pcl::PointXYZ;
+
 
 class WallDetector : public rclcpp::Node
 {
@@ -26,14 +29,53 @@ public:
 
         RCLCPP_INFO(this->get_logger(), "Wall detector node started");
         
-        wall_pub_ = this->create_publisher<geometry_msgs::msg::Point32>(
+        wall_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
             "detected_walls", 10);
+
+        cropped_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+                "cropped_cloud", 10);    
+
+        this->declare_parameter("crop_min_x", -700.0);
+        this->declare_parameter("crop_min_y", -500.0);
+        this->declare_parameter("crop_min_z", 0.0);
+        this->declare_parameter("crop_max_x", 900.0);
+        this->declare_parameter("crop_max_y", -900.0);
+        this->declare_parameter("crop_max_z", 3.0);
+
+        // Parameter change callback
+        params_callback_handle_ = this->add_on_set_parameters_callback(
+            std::bind(&WallDetector::parametersCallback, this, std::placeholders::_1));
         
     }
 
 private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_;
-    rclcpp::Publisher<geometry_msgs::msg::Point32>::SharedPtr wall_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr wall_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cropped_cloud_pub_;
+    OnSetParametersCallbackHandle::SharedPtr params_callback_handle_;
+
+    rcl_interfaces::msg::SetParametersResult parametersCallback(
+        const std::vector<rclcpp::Parameter> &parameters)
+    {
+        rcl_interfaces::msg::SetParametersResult result;
+        result.successful = true;
+
+        for (const auto &param : parameters)
+        {
+            if (param.get_name() == "min_x") min_x_ = param.as_double();
+            else if (param.get_name() == "min_y") min_y_ = param.as_double();
+            else if (param.get_name() == "min_z") min_z_ = param.as_double();
+            else if (param.get_name() == "max_x") max_x_ = param.as_double();
+            else if (param.get_name() == "max_y") max_y_ = param.as_double();
+            else if (param.get_name() == "max_z") max_z_ = param.as_double();
+        }
+
+        return result;
+    }
+
+    double min_x_ = -0.5, min_y_ = -2.0, min_z_ = 0.0;
+    double max_x_ = 3.0, max_y_ = 2.0, max_z_ = 3.0;
+
 
     int wall_id_ = 0;
 
@@ -41,20 +83,51 @@ private:
     {
         pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
         pcl::fromROSMsg(*msg, *cloud);
-
+    
         if (cloud->empty())
         {
             RCLCPP_WARN(this->get_logger(), "Received empty point cloud");
             return;
         }
+    
+        // Crop box filter first
+        pcl::PointCloud<PointT>::Ptr cropped_cloud(new pcl::PointCloud<PointT>);
+        pcl::CropBox<PointT> crop_box;
+    
+        crop_box.setInputCloud(cloud); 
+        crop_box.setNegative(false);
+    
 
-        // Downsample
+        crop_box.setMin(Eigen::Vector4f(min_x_, min_y_, min_z_, 1.0));
+        crop_box.setMax(Eigen::Vector4f(max_x_, max_y_, max_z_, 1.0));   
+    
+        crop_box.filter(*cropped_cloud);
+
+        sensor_msgs::msg::PointCloud2 cropped_msg;
+        pcl::toROSMsg(*cropped_cloud, cropped_msg);
+        cropped_msg.header = msg->header;
+        cropped_cloud_pub_->publish(cropped_msg);
+
+
+        if (cropped_cloud->empty())
+        {
+            RCLCPP_WARN(this->get_logger(), "Cropped point cloud is empty");
+            return;
+        }
+    
+        // apply voxel downsampling
         pcl::PointCloud<PointT>::Ptr voxel_cloud(new pcl::PointCloud<PointT>);
         pcl::VoxelGrid<PointT> voxel_filter;
-        voxel_filter.setInputCloud(cloud);
+        voxel_filter.setInputCloud(cropped_cloud); 
         voxel_filter.setLeafSize(0.1f, 0.1f, 0.1f);
         voxel_filter.filter(*voxel_cloud);
-
+    
+        if (voxel_cloud->empty())
+        {
+            RCLCPP_WARN(this->get_logger(), "Voxel filtered cloud is empty");
+            return;
+        }
+    
         // Compute normals
         pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
         pcl::NormalEstimation<PointT, pcl::Normal> normal_estimator;
@@ -63,6 +136,12 @@ private:
         normal_estimator.setInputCloud(voxel_cloud);
         normal_estimator.setKSearch(100);
         normal_estimator.compute(*cloud_normals);
+    
+        if (cloud_normals->empty())
+        {
+            RCLCPP_WARN(this->get_logger(), "Normal estimation returned empty cloud");
+            return;
+        }
 
         // Wall segmentation
         pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
@@ -70,10 +149,10 @@ private:
         seg.setModelType(pcl::SACMODEL_NORMAL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setNormalDistanceWeight(0.2);
-        seg.setMaxIterations(1000);
-        seg.setDistanceThreshold(0.05);
+        seg.setMaxIterations(10000);
+        seg.setDistanceThreshold(0.02); // How far points from a plane to be considered inliers
         seg.setAxis(Eigen::Vector3f(0, 0, 1));
-        seg.setEpsAngle(20.0f * (M_PI / 180.0f));
+        seg.setEpsAngle(5.0f * (M_PI / 180.0f));
         seg.setInputCloud(voxel_cloud);
         seg.setInputNormals(cloud_normals);
 
@@ -94,7 +173,7 @@ private:
         extract.setNegative(false);
         extract.filter(*wall_cloud);
 
-        if (wall_cloud->points.size() > 500)
+        if (wall_cloud->points.size() > 100)
         {
             RCLCPP_INFO(this->get_logger(), "Detected wall %d with %lu points", wall_id_, wall_cloud->size());
             find_wall_boundaries(wall_cloud);
@@ -109,13 +188,23 @@ private:
 
         
         geometry_msgs::msg::Point32 corners[4];
+        std_msgs::msg::Float32MultiArray wall_corners;
         
-        corners[0].x = min_pt.x; corners[0].y = min_pt.y; corners[0].z = min_pt.z; //
+        corners[0].x = min_pt.x; corners[0].y = min_pt.y; corners[0].z = min_pt.z; 
         corners[1].x = min_pt.x; corners[1].y = min_pt.y; corners[1].z = max_pt.z;
         corners[2].x = max_pt.x; corners[2].y = max_pt.y; corners[2].z = max_pt.z;
         corners[3].x = max_pt.x; corners[3].y = max_pt.y; corners[3].z = min_pt.z;
 
-        wall_pub_->publish(corners[0]);
+        // Publish the wall corner
+        for (int i = 0; i < 4; ++i)
+        {
+            wall_corners.data.push_back(corners[i].x);
+            wall_corners.data.push_back(corners[i].y);
+            wall_corners.data.push_back(corners[i].z);
+
+        }
+        wall_pub_->publish(wall_corners);
+
 
 
         RCLCPP_INFO(this->get_logger(), "Wall boundaries:");
