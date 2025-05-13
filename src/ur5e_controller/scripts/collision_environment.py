@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Pose
 from shape_msgs.msg import SolidPrimitive
-from moveit_msgs.msg import CollisionObject
+from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from moveit_msgs.msg import PlanningScene
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
@@ -32,47 +32,79 @@ class CollisionEnvironmentNode(Node):
     def setup_environment(self):
         self.get_logger().info('Setting up collision environment')
         self.add_floor()
-        self.add_safety_wall()
+        self.attach_gripper()
         self.get_logger().info('Collision environment setup complete')
         
     def add_floor(self):
         self.get_logger().info('Adding floor collision object')
         
         floor_id = 'floor'
-        dimensions = [3.0, 3.0, 0.02]
+        dimensions = [4.0, 4.0, 0.05]  # Larger floor with increased thickness
         pose = Pose()
         pose.position.x = 0.0
         pose.position.y = 0.0
-        pose.position.z = -0.01
+        pose.position.z = -0.025  # Position so half the thickness is below zero
         pose.orientation.w = 1.0
         
-        # Grey floor
         color = ColorRGBA(r=0.5, g=0.5, b=0.5, a=0.8)
         
         self.add_box_collision(floor_id, dimensions, pose, "base_link", color)
         
-    def add_safety_wall(self):
-        self.get_logger().info('Adding safety wall behind the robot')
+    def attach_gripper(self):
+        self.get_logger().info('Attaching gripper box to robot')
         
-        wall_id = 'safety_wall'
-        dimensions = [1.5, 0.05, 1.8]
+        gripper_id = 'gripper_box'
+        dimensions = [0.10, 0.10, 0.20]  # Keep the same dimensions
         
         pose = Pose()
         pose.position.x = 0.0
-        pose.position.y = -0.25
-        pose.position.z = 0.9
+        pose.position.y = 0.0
+        pose.position.z = 0.10
         pose.orientation.w = 1.0
         
-        # Red safety wall
-        color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.5)
+        color = ColorRGBA(r=0.0, g=0.2, b=0.8, a=0.7)
         
-        self.add_box_collision(wall_id, dimensions, pose, "base_link", color)
+        # Create the collision object for the gripper
+        collision_object = CollisionObject()
+        collision_object.header.frame_id = "tool0"
+        collision_object.id = gripper_id
         
-    def add_box_collision(self, object_id, dimensions, pose, frame_id="base_link", color=None):
-        # Add collision object to planning scene
+        box = SolidPrimitive()
+        box.type = SolidPrimitive.BOX
+        box.dimensions = dimensions
+        
+        collision_object.primitives = [box]
+        collision_object.primitive_poses = [pose]
+        collision_object.operation = CollisionObject.ADD  # Explicitly set ADD operation
+        
+        # Create an attached collision object
+        attached_object = AttachedCollisionObject()
+        attached_object.link_name = "tool0"  # Attach to the end-effector link
+        attached_object.object = collision_object
+        
+        # Include more links that can touch the gripper
+        attached_object.touch_links = [
+            "tool0", "wrist_3_link", "wrist_2_link", "wrist_1_link",
+            "ee_link", "tool0_controller", "flange"
+        ]
+        
+        # Add to planning scene
         planning_scene = PlanningScene()
         planning_scene.is_diff = True
-        planning_scene.robot_model_name = "ur5e"  # ensure scene is applied to the ur5e model
+        planning_scene.robot_model_name = "ur5e"
+        planning_scene.robot_state.attached_collision_objects = [attached_object]
+        planning_scene.world.collision_objects = []  # Ensure no duplicate objects
+        
+        self.planning_scene_pub.publish(planning_scene)
+        self.get_logger().info(f'Gripper {gripper_id} attached to robot')
+        
+        # Add visualization marker
+        self.publish_marker(gripper_id, dimensions, pose, "tool0", color)
+
+    def add_box_collision(self, object_id, dimensions, pose, frame_id="base_link", color=None):
+        planning_scene = PlanningScene()
+        planning_scene.is_diff = True
+        planning_scene.robot_model_name = "ur5e"
 
         collision_object = CollisionObject()
         collision_object.header.frame_id = frame_id
@@ -91,7 +123,6 @@ class CollisionEnvironmentNode(Node):
         self.planning_scene_pub.publish(planning_scene)
         self.get_logger().info(f'Collision object {object_id} added to planning scene')
         
-        # Add visualization marker if color is provided
         if color:
             self.publish_marker(object_id, dimensions, pose, frame_id, color)
     
@@ -102,19 +133,16 @@ class CollisionEnvironmentNode(Node):
         marker.header.frame_id = frame_id
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.ns = "collision_objects"
-        marker.id = hash(object_id) % 10000  # Simple hash for unique ID
+        marker.id = hash(object_id) % 10000
         marker.type = Marker.CUBE
         marker.action = Marker.ADD
         
-        # Set pose
         marker.pose = pose
         
-        # Set scale from dimensions
         marker.scale.x = dimensions[0]
         marker.scale.y = dimensions[1]
         marker.scale.z = dimensions[2]
         
-        # Set color
         marker.color = color
         
         marker_array.markers.append(marker)
