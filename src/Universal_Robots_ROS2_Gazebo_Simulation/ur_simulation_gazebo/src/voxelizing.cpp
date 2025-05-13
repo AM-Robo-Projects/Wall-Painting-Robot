@@ -15,7 +15,7 @@ int main  ()
 
     std::string filename = "/home/abdelrahman/Wall-Painting-Robot/pcd_files/";
     
-    cloud_reader.read(filename+std::string("cloud_10.pcd"), *cloud);
+    cloud_reader.read(filename+std::string("cloud_5.pcd"), *cloud);
     std::cout << "original cloud size: " << cloud->width * cloud->height << std::endl;
 
 

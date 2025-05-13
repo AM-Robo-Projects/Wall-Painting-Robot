@@ -78,6 +78,15 @@ target_link_libraries(clustering
   pcl_features
 )
 
+ament_target_dependencies(clustering
+  rclcpp
+  sensor_msgs
+  pcl_conversions
+  geometry_msgs
+  std_msgs
+  
+)
+
 # Install targets
 install(TARGETS test_pcl
   DESTINATION lib/${PROJECT_NAME}
