@@ -54,7 +54,7 @@ class CollisionEnvironmentNode(Node):
         self.get_logger().info('Attaching gripper box to robot')
         
         gripper_id = 'gripper_box'
-        dimensions = [0.10, 0.10, 0.20]  # Keep the same dimensions
+        dimensions = [0.10, 0.10, 0.26]  # Keep the same dimensions
         
         pose = Pose()
         pose.position.x = 0.0

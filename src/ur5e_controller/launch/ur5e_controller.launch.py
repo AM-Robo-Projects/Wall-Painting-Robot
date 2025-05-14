@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, TimerAction, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, TimerAction, SetEnvironmentVariable, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -32,14 +32,27 @@ def generate_launch_description():
     with open(lidar_transform_file, 'r') as f:
         lidar_config = yaml.safe_load(f)['lidar_transform']
     
+    # Kinematics setup
     kinematics_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
         'kinematics.yaml'
     )
     
+    # Create the kinematics file if it doesn't exist
+    if not os.path.exists(kinematics_file):
+        os.makedirs(os.path.dirname(kinematics_file), exist_ok=True)
+        with open(kinematics_file, 'w') as f:
+            f.write('''ur_manipulator:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 1.0
+  kinematics_solver_attempts: 5
+  position_only_ik: false
+''')
+    
     kinematics_exists_msg = LogInfo(
-        msg=['Checking kinematics file at: ', kinematics_file, 
+        msg=['Kinematics file status at: ', kinematics_file, 
              ' Exists: ', str(os.path.exists(kinematics_file))]
     )
 
