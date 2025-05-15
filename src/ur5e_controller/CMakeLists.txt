@@ -20,6 +20,10 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(ur_msgs REQUIRED)
 find_package(ur_dashboard_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 add_executable(robot_mover src/robot_mover.cpp)
 ament_target_dependencies(
@@ -33,8 +37,22 @@ ament_target_dependencies(
   ur_dashboard_msgs
 )
 
+add_executable(wall_detector src/clustering.cpp)
+ament_target_dependencies(
+  wall_detector
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  std_msgs
+  PCL
+  pcl_conversions
+  visualization_msgs
+)
+target_link_libraries(wall_detector ${PCL_LIBRARIES})
+
 install(TARGETS
   robot_mover
+  wall_detector
   DESTINATION lib/${PROJECT_NAME}
 )
 

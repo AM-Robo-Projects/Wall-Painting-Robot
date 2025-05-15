@@ -135,6 +135,22 @@ def generate_launch_description():
         name='collision_environment',
         output='screen',
     )
+    
+    wall_detector = Node(
+        package='ur5e_controller',
+        executable='wall_detector',
+        name='wall_detector',
+        output='screen',
+    )
+    
+    delayed_wall_detector = TimerAction(
+        period=5.0,
+        actions=[
+            LogInfo(msg='Starting wall detection node...'),
+            wall_detector
+        ]
+    )
+    
     load_and_setup = TimerAction(
         period=5.0,
         actions=[
@@ -162,4 +178,5 @@ def generate_launch_description():
         load_and_setup,
         add_collision_env,
         livox_converter,
+        delayed_wall_detector,
     ])
