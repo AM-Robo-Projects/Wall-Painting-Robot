@@ -19,11 +19,11 @@ converter:
 # Wall detection settings
 wall_detection:
   # Crop box filter limits
-  crop_min_x: -2.0
-  crop_max_x: 2.0
-  crop_min_y: -2.0
-  crop_max_y: 2.0
-  crop_min_z: 0.05
-  crop_max_z: 1.5
-  min_wall_size: 0.1
-  publish_interval: 2.0  # in seconds - interval between wall publications
+  crop_min_x: -2.5
+  crop_max_x: 2.5
+  crop_min_y: -2.5
+  crop_max_y: 2.5
+  crop_min_z: -0.5
+  crop_max_z: 1.75
+  min_wall_size: 0.15
+  publish_interval: 3.0  # in seconds - interval between wall publications

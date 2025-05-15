@@ -33,9 +33,9 @@ class CollisionEnvironmentNode(Node):
         self.get_logger().info('Setting up collision environment')
         self.add_floor()
         self.attach_gripper()
-        self.add_safety_wall()
-        self.add_left_wall()
-        self.add_right_wall()
+        # self.add_safety_wall()
+        # self.add_left_wall()
+        # self.add_right_wall()
         self.get_logger().info('Collision environment setup complete')
         
     def add_floor(self):

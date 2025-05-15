@@ -434,7 +434,7 @@ private:
             polygon_marker.color.b = 0.0;
             polygon_marker.color.a = 0.5;
             
-            polygon_marker.lifetime = rclcpp::Duration::from_seconds(publish_interval_ * 1.25);
+            polygon_marker.lifetime = rclcpp::Duration::from_seconds(publish_interval_ * 1.75);
             
             marker_array.markers.push_back(polygon_marker);
             
