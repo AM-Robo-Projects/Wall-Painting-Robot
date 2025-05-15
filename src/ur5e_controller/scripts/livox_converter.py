@@ -7,7 +7,6 @@ from livox_ros_driver2.msg import CustomMsg
 import struct
 import yaml
 import os
-import numpy as np
 from ament_index_python.packages import get_package_share_directory
 
 class LivoxPointCloudConverter(Node):

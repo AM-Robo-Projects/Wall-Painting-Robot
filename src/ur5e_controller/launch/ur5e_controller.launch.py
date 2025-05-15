@@ -10,7 +10,6 @@ import yaml
 
 def generate_launch_description():
     env_var = SetEnvironmentVariable('ROBOT_MODEL_NAME', 'ur5e')
-    
     robot_ip_arg = DeclareLaunchArgument(
         'robot_ip',
         default_value='172.31.1.200',
@@ -21,25 +20,18 @@ def generate_launch_description():
         default_value='false',
         description='Use simulation time if true'
     )
-    
-    # Load lidar transform config
     lidar_transform_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
         'lidar_transform.yaml'
     )
-    
     with open(lidar_transform_file, 'r') as f:
         lidar_config = yaml.safe_load(f)['lidar_transform']
-    
-    # Kinematics setup
     kinematics_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
         'kinematics.yaml'
     )
-    
-    # Create the kinematics file if it doesn't exist
     if not os.path.exists(kinematics_file):
         os.makedirs(os.path.dirname(kinematics_file), exist_ok=True)
         with open(kinematics_file, 'w') as f:
@@ -50,18 +42,15 @@ def generate_launch_description():
   kinematics_solver_attempts: 5
   position_only_ik: false
 ''')
-    
     kinematics_exists_msg = LogInfo(
         msg=['Kinematics file status at: ', kinematics_file, 
              ' Exists: ', str(os.path.exists(kinematics_file))]
     )
-
     common_launch_args = {
         'robot_ip': LaunchConfiguration('robot_ip'),
         'ur_type': 'ur5e',
         'use_fake_hardware': 'false',
     }
-
     ur_robot_driver_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -78,7 +67,6 @@ def generate_launch_description():
             'load_kinematics': 'true',
         }.items()
     )
-
     ur5e_moveit_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -97,10 +85,7 @@ def generate_launch_description():
             'disable_octomap': 'true',
         }.items()
     )
-
     moveit_launch = LogInfo(msg='Launching MoveIt 2 with UR5e robot...')
-
-    # Use values from config file for static transform
     static_transform = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -116,7 +101,6 @@ def generate_launch_description():
             lidar_config['child_frame']
         ]
     )
-
     livox_lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -126,7 +110,6 @@ def generate_launch_description():
             ])
         ])
     )
-
     livox_converter = Node(
         package='ur5e_controller',
         executable='livox_converter.py',
@@ -139,7 +122,6 @@ def generate_launch_description():
             'source_frame': lidar_config['child_frame']
         }]
     )
-
     auto_setup = Node(
         package='ur5e_controller',
         executable='auto_setup_ur.py',
@@ -147,14 +129,12 @@ def generate_launch_description():
         output='screen',
         parameters=[{'robot_ip': LaunchConfiguration('robot_ip')}]
     )
-    
     collision_environment = Node(
         package='ur5e_controller',
         executable='collision_environment.py',
         name='collision_environment',
         output='screen',
     )
-
     load_and_setup = TimerAction(
         period=5.0,
         actions=[
@@ -162,7 +142,6 @@ def generate_launch_description():
             auto_setup
         ]
     )
-    
     add_collision_env = TimerAction(
         period=3.0, 
         actions=[
@@ -170,7 +149,6 @@ def generate_launch_description():
             collision_environment
         ]
     )
-
     return LaunchDescription([
         env_var,
         robot_ip_arg,
