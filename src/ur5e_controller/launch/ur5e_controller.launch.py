@@ -20,13 +20,24 @@ def generate_launch_description():
         default_value='false',
         description='Use simulation time if true'
     )
-    lidar_transform_file = os.path.join(
+    
+    # Update lidar config file path
+    lidar_config_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
-        'lidar_transform.yaml'
+        'lidar_config.yaml'
     )
-    with open(lidar_transform_file, 'r') as f:
-        lidar_config = yaml.safe_load(f)['lidar_transform']
+    
+    # Try to load the config
+    config_data = {}
+    try:
+        with open(lidar_config_file, 'r') as f:
+            config_data = yaml.safe_load(f)
+        transform_config = config_data.get('transform', {})
+    except Exception as e:
+        print(f"Error loading config file: {e}")
+        transform_config = {}
+    
     kinematics_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
@@ -91,14 +102,14 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='livox_to_base_static_transform',
         arguments=[
-            str(lidar_config['x']), 
-            str(lidar_config['y']), 
-            str(lidar_config['z']),
-            str(lidar_config['roll']), 
-            str(lidar_config['pitch']), 
-            str(lidar_config['yaw']),
-            lidar_config['parent_frame'], 
-            lidar_config['child_frame']
+            str(transform_config.get('x', 0.0)), 
+            str(transform_config.get('y', 0.0)), 
+            str(transform_config.get('z', 0.0)),
+            str(transform_config.get('roll', 0.0)), 
+            str(transform_config.get('pitch', 0.0)), 
+            str(transform_config.get('yaw', 0.0)),
+            transform_config.get('parent_frame', 'base_link'), 
+            transform_config.get('child_frame', 'livox_frame')
         ]
     )
     livox_lidar_launch = IncludeLaunchDescription(
@@ -116,10 +127,7 @@ def generate_launch_description():
         name='livox_converter',
         output='screen',
         parameters=[{
-            'livox_custom_topic': '/livox/lidar',
-            'point_cloud_topic': '/livox/point_cloud',
-            'target_frame': lidar_config['parent_frame'],
-            'source_frame': lidar_config['child_frame']
+            'config_path': lidar_config_file
         }]
     )
     auto_setup = Node(
@@ -141,6 +149,9 @@ def generate_launch_description():
         executable='wall_detector',
         name='wall_detector',
         output='screen',
+        parameters=[{
+            'config_path': lidar_config_file
+        }]
     )
     
     delayed_wall_detector = TimerAction(

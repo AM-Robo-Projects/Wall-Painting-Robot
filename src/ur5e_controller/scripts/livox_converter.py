@@ -22,25 +22,27 @@ class LivoxPointCloudConverter(Node):
             self.package_share_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..')
             self.get_logger().warning(f'Package not found in ament index, using relative path: {self.package_share_dir}')
         
-        default_config_path = os.path.join(self.package_share_dir, 'config', 'lidar_transform.yaml')
-        
-        self.declare_parameter('livox_custom_topic', '/livox/lidar')
-        self.declare_parameter('point_cloud_topic', '/livox/point_cloud')
-        self.declare_parameter('target_frame', 'base_link')
-        self.declare_parameter('source_frame', 'livox_frame')
+        # Default config path and override with parameter if provided
+        default_config_path = os.path.join(self.package_share_dir, 'config', 'lidar_config.yaml')
         self.declare_parameter('config_path', default_config_path)
-        self.declare_parameter('buffer_duration', 0.5)
-        self.declare_parameter('publish_rate', 10.0)
-        
-        self.livox_custom_topic = self.get_parameter('livox_custom_topic').get_parameter_value().string_value
-        self.point_cloud_topic = self.get_parameter('point_cloud_topic').get_parameter_value().string_value
-        self.target_frame = self.get_parameter('target_frame').get_parameter_value().string_value
-        self.source_frame = self.get_parameter('source_frame').get_parameter_value().string_value
         self.config_path = self.get_parameter('config_path').get_parameter_value().string_value
-        self.buffer_duration = self.get_parameter('buffer_duration').get_parameter_value().double_value
-        self.publish_rate = self.get_parameter('publish_rate').get_parameter_value().double_value
         
-        self.transform_params = self.load_transform_config()
+        # Load configuration from YAML
+        config = self.load_config()
+        converter_config = config.get('converter', {})
+        transform_config = config.get('transform', {})
+        
+        # Set parameters from the configuration
+        self.buffer_duration = float(converter_config.get('buffer_duration', 0.5))
+        self.publish_rate = float(converter_config.get('publish_rate', 10.0))
+        
+        # Fixed topic names, not from config
+        self.livox_custom_topic = "/livox/lidar"
+        self.point_cloud_topic = "/livox/point_cloud"
+        
+        self.target_frame = transform_config.get('parent_frame', 'base_link')
+        self.source_frame = transform_config.get('child_frame', 'livox_frame')
+        
         self.point_buffer = deque()
         
         qos = QoSProfile(
@@ -59,27 +61,24 @@ class LivoxPointCloudConverter(Node):
         
         self.publish_timer = self.create_timer(1.0/self.publish_rate, self.publish_accumulated_points)
         
-        self.get_logger().info(f'Livox converter initialized. Converting from {self.livox_custom_topic} to {self.point_cloud_topic}')
-        self.get_logger().info(f'Publishing in the {self.source_frame} frame - TF system will handle transformations')
-        self.get_logger().info(f'Using {self.buffer_duration}s buffer for more robust point clouds')
+        self.get_logger().info(f'Livox converter initialized from config: {self.config_path}')
+        self.get_logger().info(f'Converting from {self.livox_custom_topic} to {self.point_cloud_topic}')
+        self.get_logger().info(f'Publishing in the {self.source_frame} frame with {self.buffer_duration}s buffer')
     
-    def load_transform_config(self):
+    def load_config(self):
         try:
             if not os.path.exists(self.config_path):
                 self.get_logger().error(f'Config file not found: {self.config_path}')
-                return {'x': 0.0, 'y': 0.0, 'z': 0.0, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
+                return {}
             
             with open(self.config_path, 'r') as f:
                 config = yaml.safe_load(f)
-                
-            if 'lidar_transform' not in config:
-                self.get_logger().error('No lidar_transform section found in config file')
-                return {'x': 0.0, 'y': 0.0, 'z': 0.0, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
-                
-            return config['lidar_transform']
+            
+            self.get_logger().info(f'Loaded configuration from {self.config_path}')
+            return config
         except Exception as e:
             self.get_logger().error(f'Error loading config file: {e}')
-            return {'x': 0.0, 'y': 0.0, 'z': 0.0, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
+            return {}
     
     def livox_callback(self, msg):
         if msg.point_num > 0:

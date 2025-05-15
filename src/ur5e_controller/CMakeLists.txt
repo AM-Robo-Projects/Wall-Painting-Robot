@@ -15,6 +15,7 @@ find_package(controller_manager_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -24,6 +25,7 @@ find_package(std_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)  # Added YAML-CPP dependency
 
 add_executable(robot_mover src/robot_mover.cpp)
 ament_target_dependencies(
@@ -47,8 +49,10 @@ ament_target_dependencies(
   PCL
   pcl_conversions
   visualization_msgs
+  tf2
+  tf2_ros
 )
-target_link_libraries(wall_detector ${PCL_LIBRARIES})
+target_link_libraries(wall_detector ${PCL_LIBRARIES} yaml-cpp)  # Added yaml-cpp
 
 install(TARGETS
   robot_mover
