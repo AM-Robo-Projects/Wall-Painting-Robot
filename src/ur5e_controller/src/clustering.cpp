@@ -171,7 +171,7 @@ private:
             publishWallMarkers();
 
             // log the number of walls detected
-            RCLCPP_INFO(this->get_logger(), "Detected %zu walls in %.2fs interval", wall_count, publish_interval_);
+            // RCLCPP_INFO(this->get_logger(), "Detected %zu walls in %.2fs interval", wall_count, publish_interval_);
         } else {
             // Publish empty message
             std_msgs::msg::Float32MultiArray empty_walls;
@@ -185,7 +185,7 @@ private:
             marker_array.markers.push_back(delete_marker);
             marker_pub_->publish(marker_array);
 
-            RCLCPP_INFO(this->get_logger(), "No walls detected in %.2fs interval", publish_interval_);
+            RCLCPP_INFO(this->get_logger(), "No walls detected");
         }
         
         // Reset for next interval
@@ -434,7 +434,7 @@ private:
             polygon_marker.color.b = 0.0;
             polygon_marker.color.a = 0.5;
             
-            polygon_marker.lifetime = rclcpp::Duration::from_seconds(publish_interval_ * 1.1);
+            polygon_marker.lifetime = rclcpp::Duration::from_seconds(publish_interval_ * 1.25);
             
             marker_array.markers.push_back(polygon_marker);
             
@@ -488,32 +488,26 @@ private:
         wall.corners[2].x = max_pt.x; wall.corners[2].y = max_pt.y; wall.corners[2].z = max_pt.z;
         wall.corners[3].x = max_pt.x; wall.corners[3].y = max_pt.y; wall.corners[3].z = min_pt.z;
         
-        // Create a signature to avoid exact duplicates in the current interval
         std::stringstream ss;
         ss << std::fixed << std::setprecision(2);
         ss << wall.center_x << "_" << wall.center_y << "_" << wall.center_z;
         std::string wall_key = ss.str();
         
-        // Check if we've already seen this exact wall in the current interval
         if (current_scan_walls_.find(wall_key) != current_scan_walls_.end()) {
-            return; // Skip exact duplicate walls
+            return;
         }
         
-        // Check if this wall should be merged with an existing wall
         bool merged = false;
         for (auto& existing_wall : current_walls_) {
             if (should_merge_walls(wall, existing_wall)) {
-                // Merge with existing wall
                 Wall merged_wall = merge_walls(wall, existing_wall);
-                existing_wall = merged_wall; // Replace existing wall with merged one
-                
+                existing_wall = merged_wall; 
                 merged = true;
                 break;
             }
         }
         
         if (!merged) {
-            // New wall detected, mark as seen and add to collection
             current_scan_walls_.insert(wall_key);
             current_walls_.push_back(wall);
         }
