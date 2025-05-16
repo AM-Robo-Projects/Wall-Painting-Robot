@@ -39,7 +39,7 @@ ament_target_dependencies(
   ur_dashboard_msgs
 )
 
-add_executable(wall_detector src/clustering.cpp)
+add_executable(wall_detector src/wall_detector.cpp)
 ament_target_dependencies(
   wall_detector
   rclcpp

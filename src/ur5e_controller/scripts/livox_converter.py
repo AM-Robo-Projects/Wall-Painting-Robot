@@ -138,7 +138,6 @@ class LivoxPointCloudConverter(Node):
         pc2_msg.is_dense = True
         
         self.pc_publisher.publish(pc2_msg)
-        self.get_logger().debug(f'Published merged point cloud with {total_points} points from {len(self.point_buffer)} frames')
 
 def main(args=None):
     rclpy.init(args=args)
