@@ -1,4 +1,23 @@
-# Lidar and wall detection configuration
+# Lidar and Wall Detection Configuration
+#
+# This configuration file controls the behavior of the LiDAR system and wall detection.
+# All distance measurements are in meters unless otherwise specified.
+#
+# Transform Configuration:
+# - Defines the 6-DOF transform from base_link to the LiDAR frame
+# - x, y, z: Translation in meters
+# - roll, pitch, yaw: Rotation in radians
+#
+# Point Cloud Converter Settings:
+# - buffer_duration: Time window for accumulating points (seconds)
+# - publish_rate: Frequency of point cloud publication (Hz)
+#
+# Wall Detection Settings:
+# - crop_min/max_x/y/z: Bounding box limits for point cloud filtering (meters)
+# - min_wall_size: Minimum physical size for detected walls (meters)
+# - publish_interval: Time between wall detection publications (seconds)
+# - rolling_window_size: Number of detection cycles to remember
+#                       (set to 0 to disable the rolling window)
 
 # Transform configuration
 transform:
@@ -18,12 +37,12 @@ converter:
 
 # Wall detection settings
 wall_detection:
-  # Crop box filter limits
   crop_min_x: -2.5
   crop_max_x: 2.5
   crop_min_y: -2.5
   crop_max_y: 2.5
   crop_min_z: -0.5
   crop_max_z: 1.75
-  min_wall_size: 0.15
-  publish_interval: 3.0  # in seconds - interval between wall publications
+  min_wall_size: 0.7
+  publish_interval: 3.0
+  rolling_window_size: 3
