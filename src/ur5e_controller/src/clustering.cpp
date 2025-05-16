@@ -61,6 +61,7 @@ private:
         float width;
         float height;
         geometry_msgs::msg::Point32 corners[4];
+        rclcpp::Time last_seen; // Add timestamp to track wall age
     };
     
     std::vector<Wall> current_walls_;
@@ -236,7 +237,7 @@ private:
         pcl::PointCloud<PointT>::Ptr voxel_cloud(new pcl::PointCloud<PointT>);
         pcl::VoxelGrid<PointT> voxel_filter;
         voxel_filter.setInputCloud(cropped_cloud); 
-        voxel_filter.setLeafSize(0.1f, 0.1f, 0.1f);
+        voxel_filter.setLeafSize(0.05f, 0.05f, 0.05f); // More points for better detection
         voxel_filter.filter(*voxel_cloud);
     
         if (voxel_cloud->empty()) {
@@ -248,7 +249,7 @@ private:
         pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
         normal_estimator.setSearchMethod(tree);
         normal_estimator.setInputCloud(voxel_cloud);
-        normal_estimator.setKSearch(100);
+        normal_estimator.setKSearch(50); // Reduce from 100 to 50 for better sensitivity
         normal_estimator.compute(*cloud_normals);
     
         if (cloud_normals->empty()) {
@@ -259,11 +260,11 @@ private:
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_NORMAL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setNormalDistanceWeight(0.2);
+        seg.setNormalDistanceWeight(0.1); // Decreased from 0.2 for more sensitivity
         seg.setMaxIterations(10000);
-        seg.setDistanceThreshold(0.02);
+        seg.setDistanceThreshold(0.03); // Increased from 0.02 to be more inclusive
         seg.setAxis(Eigen::Vector3f(0, 0, 1));
-        seg.setEpsAngle(5.0f * (M_PI / 180.0f));
+        seg.setEpsAngle(10.0f * (M_PI / 180.0f)); // Increased angle tolerance from 5.0 to 10.0 degrees
         seg.setInputCloud(voxel_cloud);
         seg.setInputNormals(cloud_normals);
 
@@ -282,7 +283,7 @@ private:
         extract.setNegative(false);
         extract.filter(*wall_cloud);
 
-        if (wall_cloud->points.size() > 100) {
+        if (wall_cloud->points.size() > 50) { // Reduced from 100 to 50 for more sensitivity
             find_wall_boundaries(wall_cloud);
         }
     }
@@ -304,6 +305,16 @@ private:
         true_height = std::max(height1, height2);
     }
 
+    // Initialize wall struct with proper timestamp in constructor
+    Wall createWall(float cx, float cy, float cz) {
+        Wall wall;
+        wall.center_x = cx;
+        wall.center_y = cy;
+        wall.center_z = cz;
+        wall.last_seen = this->get_clock()->now();  // Use get_clock()->now() for safety
+        return wall;
+    }
+
     void find_wall_boundaries(pcl::PointCloud<PointT>::Ptr wall_cloud)
     {
         PointT min_pt, max_pt;
@@ -317,6 +328,8 @@ private:
         wall.center_x = center_x;
         wall.center_y = center_y;
         wall.center_z = center_z;
+        // Use get_clock()->now() for more robust timestamps
+        wall.last_seen = this->get_clock()->now();
         
         wall.corners[0].x = min_pt.x; wall.corners[0].y = min_pt.y; wall.corners[0].z = min_pt.z; 
         wall.corners[1].x = min_pt.x; wall.corners[1].y = min_pt.y; wall.corners[1].z = max_pt.z;
@@ -358,11 +371,43 @@ private:
             current_walls_.push_back(wall);
         }
     }
-    
+
+    // Add a safe time comparison function
+    double getTimeDifference(const rclcpp::Time& t1, const rclcpp::Time& t2) {
+        try {
+            // Try the direct subtraction first
+            return (t1 - t2).seconds();
+        } catch (const std::exception& e) {
+            // If time sources don't match, use a safer approach
+            RCLCPP_WARN(this->get_logger(), "Time comparison error: %s. Using nanoseconds comparison instead.", e.what());
+            return static_cast<double>(t1.nanoseconds() - t2.nanoseconds()) / 1e9;
+        }
+    }
+
     void publish_walls_and_reset()
     {
-        std::vector<Wall> walls_to_publish = current_walls_;
+        // Clean up old walls from previous_walls_ first - keep only recent walls
+        if (rolling_window_size_ > 0 && !previous_walls_.empty()) {
+            auto current_time = this->now();
+            auto it = previous_walls_.begin();
+            while (it != previous_walls_.end()) {
+                // Use safe time comparison
+                double age = getTimeDifference(current_time, it->last_seen);
+                if (age > publish_interval_ * 2.0) {
+                    it = previous_walls_.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
         
+        // Keep a separate list of walls for publishing vs. rolling window storage
+        std::vector<Wall> walls_to_publish;
+        
+        // First add all current walls to the publishing list
+        walls_to_publish = current_walls_;
+        
+        // Merge with previous walls for display purposes only
         if (rolling_window_size_ > 0 && !previous_walls_.empty()) {
             for (const auto& prev_wall : previous_walls_) {
                 bool merged = false;
@@ -370,6 +415,7 @@ private:
                 if (enable_wall_merging_) {
                     for (auto& existing_wall : walls_to_publish) {
                         if (should_merge_walls(prev_wall, existing_wall)) {
+                            // Only for display/publishing - not saved in rolling window
                             existing_wall = merge_walls(prev_wall, existing_wall);
                             merged = true;
                             break;
@@ -378,6 +424,7 @@ private:
                 }
                 
                 if (!merged) {
+                    // Add previous walls that don't need merging
                     walls_to_publish.push_back(prev_wall);
                 }
             }
@@ -400,6 +447,7 @@ private:
             
             walls_pub_->publish(all_walls);
             
+            // Only visualize the merged walls for display
             publishWallMarkers(walls_to_publish);
         } else {
             std_msgs::msg::Float32MultiArray empty_walls;
@@ -415,33 +463,22 @@ private:
             RCLCPP_INFO(this->get_logger(), "No walls detected");
         }
         
+        // Update rolling window storage with ONLY detected walls (not merged ones)
         if (rolling_window_size_ > 0) {
             if (!current_walls_.empty()) {
-                if (previous_walls_.empty()) {
-                    previous_walls_ = current_walls_;
-                } else {
-                    for (const auto& wall : current_walls_) {
-                        bool merged = false;
-                        if (enable_wall_merging_) {
-                          for (auto& prev_wall : previous_walls_) {
-                                if (should_merge_walls(wall, prev_wall)) {
-                                    prev_wall = merge_walls(wall, prev_wall);
-                                    merged = true;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if (!merged) {
-                            previous_walls_.push_back(wall);
-                        }
-                    }
-                    
-                    const size_t max_walls = static_cast<size_t>(rolling_window_size_) * 10;
-                    if (previous_walls_.size() > max_walls) {
-                        previous_walls_.erase(previous_walls_.begin(), 
-                                             previous_walls_.begin() + (previous_walls_.size() - max_walls));
-                    }
+                // Simply append current real walls to previous walls
+                previous_walls_.insert(previous_walls_.end(), current_walls_.begin(), current_walls_.end());
+                
+                // Limit max walls by removing oldest ones first
+                const size_t max_walls = static_cast<size_t>(rolling_window_size_) * 3; // Further reduced from 5 to 3
+                if (previous_walls_.size() > max_walls) {
+                    // Sort by timestamp before removing
+                    std::sort(previous_walls_.begin(), previous_walls_.end(), 
+                        [](const Wall& a, const Wall& b) {
+                            return a.last_seen < b.last_seen;
+                        });
+                    previous_walls_.erase(previous_walls_.begin(), 
+                                         previous_walls_.begin() + (previous_walls_.size() - max_walls));
                 }
             }
         } else {
@@ -463,12 +500,12 @@ private:
         float max_size2 = std::max(wall2.width, wall2.height);
         float average_size = (max_size1 + max_size2) / 2.0f;
         
-        float merge_threshold = 0.3f * average_size;
+        float merge_threshold = 0.5f * average_size; // Increased from 0.3f for more aggressive merging
         
-        bool same_plane = std::abs(wall1.center_y - wall2.center_y) < 0.2f;
+        bool same_plane = std::abs(wall1.center_y - wall2.center_y) < 0.3f; // More lenient from 0.2f
         
-        bool x_overlap = (std::abs(wall1.center_x - wall2.center_x) < (wall1.width/2 + wall2.width/2));
-        bool z_overlap = (std::abs(wall1.center_z - wall2.center_z) < (wall1.height/2 + wall2.height/2));
+        bool x_overlap = (std::abs(wall1.center_x - wall2.center_x) < (wall1.width/2 + wall2.width/2 + 0.1f));
+        bool z_overlap = (std::abs(wall1.center_z - wall2.center_z) < (wall1.height/2 + wall2.height/2 + 0.1f));
         
         return (center_distance < merge_threshold) || (same_plane && x_overlap && z_overlap);
     }
@@ -501,6 +538,9 @@ private:
         merged.corners[2].x = max_x; merged.corners[2].y = max_y; merged.corners[2].z = max_z;
         merged.corners[3].x = max_x; merged.corners[3].y = max_y; merged.corners[3].z = min_z;
         
+        // Make sure to set the timestamp
+        merged.last_seen = this->get_clock()->now();
+        
         return merged;
     }
 
@@ -529,6 +569,13 @@ private:
         visualization_msgs::msg::MarkerArray marker_array;
         
         std::vector<Wall> smoothed_walls = applyTemporalFiltering(walls);
+        
+        // Always start by deleting all existing markers for clean state
+        visualization_msgs::msg::Marker delete_all_marker;
+        delete_all_marker.header.frame_id = "livox_frame";
+        delete_all_marker.header.stamp = this->now();
+        delete_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+        marker_array.markers.push_back(delete_all_marker);
         
         std::unordered_set<int> active_wall_ids;
         
@@ -567,7 +614,9 @@ private:
             polygon_marker.color.b = 0.0;
             polygon_marker.color.a = 0.5;
             
-            polygon_marker.lifetime = rclcpp::Duration::from_seconds(publish_interval_ * 1.75);
+            // Set very short marker lifetime to make old walls disappear faster
+            auto marker_lifetime = publish_interval_ * 1.1; // Further reduced
+            polygon_marker.lifetime = rclcpp::Duration::from_seconds(marker_lifetime);
             
             marker_array.markers.push_back(polygon_marker);
             
@@ -595,20 +644,7 @@ private:
             marker_array.markers.push_back(outline_marker);
         }
         
-        for (const auto& id_pair : previous_marker_ids_) {
-            if (active_wall_ids.find(id_pair) == active_wall_ids.end()) {
-                visualization_msgs::msg::Marker delete_marker;
-                delete_marker.header.frame_id = "livox_frame";
-                delete_marker.header.stamp = this->now();
-                delete_marker.ns = "wall_polygons";
-                delete_marker.id = id_pair;
-                delete_marker.action = visualization_msgs::msg::Marker::DELETE;
-                marker_array.markers.push_back(delete_marker);
-                
-                delete_marker.ns = "wall_outlines";
-                marker_array.markers.push_back(delete_marker);
-            }
-        }
+        // We're already deleting all markers at the beginning, so we don't need the individual delete code
         
         previous_marker_ids_ = active_wall_ids;
         
@@ -617,25 +653,46 @@ private:
     
     std::vector<Wall> applyTemporalFiltering(const std::vector<Wall>& walls) {
         std::vector<Wall> smoothed_walls = walls;
+        auto current_time = this->now();
         
         if (!prev_smoothed_walls_.empty()) {
+            // Aggressively remove old walls from temporal filtering
+            auto it = prev_smoothed_walls_.begin();
+            while (it != prev_smoothed_walls_.end()) {
+                // Use safe time comparison
+                double age = getTimeDifference(current_time, it->last_seen);
+                if (age > publish_interval_ * 1.5) { // Even faster removal - 1.5 cycles
+                    it = prev_smoothed_walls_.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            
             for (auto& current_wall : smoothed_walls) {
+                current_wall.last_seen = current_time;
+                
                 for (const auto& prev_wall : prev_smoothed_walls_) {
                     float dx = current_wall.center_x - prev_wall.center_x;
                     float dy = current_wall.center_y - prev_wall.center_y;
                     float dz = current_wall.center_z - prev_wall.center_z;
                     float distance = std::sqrt(dx*dx + dy*dy + dz*dz);
                     
-                    if (distance < position_tolerance_) {
-                        const float alpha = 0.7f;
+                    if (distance < position_tolerance_ * 1.5f) {
+                        // Adjust alpha based on how recently the previous wall was seen
+                        double age = getTimeDifference(current_time, prev_wall.last_seen);
+                        float age_factor = std::min(1.0f, static_cast<float>(age) / static_cast<float>(publish_interval_));
+                        
+                        // More weight to new measurements for fresher update
+                        const float base_alpha = 0.95f; // Very high weight to current measurements
+                        float alpha = std::min(0.99f, base_alpha + (0.04f * age_factor)); // Cap at 0.99
                         
                         for (int i = 0; i < 4; ++i) {
                             current_wall.corners[i].x = alpha * current_wall.corners[i].x + 
-                                                      (1.0f - alpha) * prev_wall.corners[i].x;
+                                                          (1.0f - alpha) * prev_wall.corners[i].x;
                             current_wall.corners[i].y = alpha * current_wall.corners[i].y + 
-                                                      (1.0f - alpha) * prev_wall.corners[i].y;
+                                                          (1.0f - alpha) * prev_wall.corners[i].y;
                             current_wall.corners[i].z = alpha * current_wall.corners[i].z + 
-                                                      (1.0f - alpha) * prev_wall.corners[i].z;
+                                                          (1.0f - alpha) * prev_wall.corners[i].z;
                         }
                         
                         current_wall.center_x = (current_wall.corners[0].x + current_wall.corners[2].x) / 2.0f;
@@ -647,6 +704,7 @@ private:
                         current_wall.width = true_width;
                         current_wall.height = true_height;
                         
+                        // We found a match, so break the inner loop and move to the next wall
                         break;
                     }
                 }
