@@ -18,6 +18,7 @@
 # - publish_interval: Time between wall detection publications (seconds)
 # - rolling_window_size: Number of detection cycles to remember
 #                       (set to 0 to disable the rolling window)
+# - enable_wall_merging: Whether to merge nearby walls (true/false)
 
 # Transform configuration
 transform:
@@ -37,12 +38,13 @@ converter:
 
 # Wall detection settings
 wall_detection:
-  crop_min_x: -2.5
+  crop_min_x: 1.0
   crop_max_x: 2.5
   crop_min_y: -2.5
   crop_max_y: 2.5
-  crop_min_z: -0.5
+  crop_min_z: -0.2
   crop_max_z: 1.75
-  min_wall_size: 0.7
-  publish_interval: 3.0
+  min_wall_size: 0.75
+  publish_interval: 1.0
   rolling_window_size: 3
+  enable_wall_merging: false
