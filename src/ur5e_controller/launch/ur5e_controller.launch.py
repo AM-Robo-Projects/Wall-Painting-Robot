@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, TimerAction, SetEnvironmentVariable, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, TimerAction, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -28,15 +28,22 @@ def generate_launch_description():
         'lidar_config.yaml'
     )
     
-    # Try to load the config
+    # Load the config file only once
     config_data = {}
+    transform_config = {}
+    gui_enabled = False
     try:
         with open(lidar_config_file, 'r') as f:
             config_data = yaml.safe_load(f)
+            
+        # Extract all required configuration values
         transform_config = config_data.get('transform', {})
+        gui_enabled = config_data.get('wall_detection', {}).get('enable_crop_box_gui', False)
+        
+        print(f"Loaded lidar configuration from {lidar_config_file}")
+        print(f"GUI enabled: {gui_enabled}")
     except Exception as e:
         print(f"Error loading config file: {e}")
-        transform_config = {}
     
     kinematics_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
@@ -105,10 +112,10 @@ def generate_launch_description():
             str(transform_config.get('x', 0.0)), 
             str(transform_config.get('y', 0.0)), 
             str(transform_config.get('z', 0.0)),
-            str(transform_config.get('roll', 0.0)), 
+            str(transform_config.get('yaw', 0.0)), 
             str(transform_config.get('pitch', 0.0)), 
-            str(transform_config.get('yaw', 0.0)),
-            transform_config.get('parent_frame', 'base_link'), 
+            str(transform_config.get('roll', 0.0)),
+            transform_config.get('parent_frame', 'base'), 
             transform_config.get('child_frame', 'livox_frame')
         ]
     )
@@ -168,7 +175,9 @@ def generate_launch_description():
             collision_environment
         ]
     )
-    return LaunchDescription([
+    
+    # Define all nodes for the LaunchDescription
+    nodes = [
         env_var,
         robot_ip_arg,
         use_sim_time_arg,
@@ -182,4 +191,19 @@ def generate_launch_description():
         add_collision_env,
         livox_converter,
         wall_detector,
-    ])
+    ]
+    
+    # Conditionally add the crop box GUI
+    if gui_enabled:
+        crop_box_gui = Node(
+            package='ur5e_controller',
+            executable='crop_box_gui.py',
+            name='crop_box_gui',
+            output='screen',
+            parameters=[{
+                'config_path': lidar_config_file
+            }]
+        )
+        nodes.append(crop_box_gui)
+    
+    return LaunchDescription(nodes)

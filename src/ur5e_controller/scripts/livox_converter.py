@@ -40,7 +40,7 @@ class LivoxPointCloudConverter(Node):
         self.livox_custom_topic = "/livox/lidar"
         self.point_cloud_topic = "/livox/point_cloud"
         
-        self.target_frame = transform_config.get('parent_frame', 'base_link')
+        self.target_frame = transform_config.get('parent_frame', 'base')
         self.source_frame = transform_config.get('child_frame', 'livox_frame')
         
         self.point_buffer = deque()
@@ -64,6 +64,7 @@ class LivoxPointCloudConverter(Node):
         self.get_logger().info(f'Livox converter initialized from config: {self.config_path}')
         self.get_logger().info(f'Converting from {self.livox_custom_topic} to {self.point_cloud_topic}')
         self.get_logger().info(f'Publishing in the {self.source_frame} frame with {self.buffer_duration}s buffer')
+        self.get_logger().info(f'Target frame: {self.target_frame}')
     
     def load_config(self):
         try:

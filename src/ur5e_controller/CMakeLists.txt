@@ -52,11 +52,24 @@ ament_target_dependencies(
   tf2
   tf2_ros
 )
-target_link_libraries(wall_detector ${PCL_LIBRARIES} yaml-cpp)  # Added yaml-cpp
+target_link_libraries(wall_detector ${PCL_LIBRARIES} yaml-cpp)  # Fixed target name
+
+add_executable(wall_painter src/wall_painter.cpp)
+ament_target_dependencies(
+  wall_painter
+  rclcpp
+  std_msgs
+  geometry_msgs
+  moveit_ros_planning_interface
+  tf2_ros
+  tf2_geometry_msgs
+)
+target_link_libraries(wall_painter yaml-cpp)
 
 install(TARGETS
   robot_mover
   wall_detector
+  wall_painter
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -64,6 +77,7 @@ install(PROGRAMS
   scripts/auto_setup_ur.py
   scripts/collision_environment.py
   scripts/livox_converter.py
+  scripts/crop_box_gui.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

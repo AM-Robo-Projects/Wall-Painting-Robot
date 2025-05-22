@@ -14,37 +14,35 @@
 #
 # Wall Detection Settings:
 # - crop_min/max_x/y/z: Bounding box limits for point cloud filtering (meters)
-# - min_wall_size: Minimum physical size for detected walls (meters)
-# - publish_interval: Time between wall detection publications (seconds)
-# - rolling_window_size: Number of detection cycles to remember
-#                       (set to 0 to disable the rolling window)
-# - enable_wall_merging: Whether to merge nearby walls (true/false)
+# - min_wall_points: Minimum number of points for wall detection
+# - debug_output: Enable or disable detailed debugging output (true/false)
 
 # Transform configuration
 transform:
   x: 0.0
-  y: 0.65
+  y: -0.15
   z: 0.0
-  roll: 3.14
+  roll: 0.0
   pitch: 0.0
-  yaw: 0.0
-  parent_frame: "base_link"
+  yaw: 1.57
+  parent_frame: "base"
   child_frame: "livox_frame"
 
 # Point cloud converter settings
 converter:
-  buffer_duration: 1.0
+  buffer_duration: 1.5
   publish_rate: 10.0
 
 # Wall detection settings
 wall_detection:
-  crop_min_x: -0.1
-  crop_max_x: 1.0
-  crop_min_y: -1.5
-  crop_max_y: 1.5
-  crop_min_z: 0.05
-  crop_max_z: 1.5
-  min_wall_size: 0.15
-  publish_interval: 1.5
-  rolling_window_size: 3
-  enable_wall_merging: true
+  # UI control flag
+  enable_crop_box_gui: false
+  # Improved crop box for better wall detection
+  crop_min_x: -2.0
+  crop_max_x: 0.5
+  crop_min_y: -3.0
+  crop_max_y: -0.3
+  crop_min_z: 0.1
+  crop_max_z: 2.0
+  min_wall_size: 0.5
+  min_wall_points: 50  # Minimum number of points for a wall to be considered valid
