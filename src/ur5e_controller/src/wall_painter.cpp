@@ -83,13 +83,13 @@ public:
 
 private:
     void moveToHome() {
-        RCLCPP_INFO(this->get_logger(), "Moving to home position (X=0.0027, Y=0.3267, Z=0.3998)...");
+        RCLCPP_INFO(this->get_logger(), "Moving to home position");
         geometry_msgs::msg::Pose home_pose;
-        home_pose.position.x = 0.0027;
-        home_pose.position.y = 0.3267;
-        home_pose.position.z = 0.3998;
+        home_pose.position.x = 0.00;
+        home_pose.position.y = 0.33;
+        home_pose.position.z = 0.40;
         tf2::Quaternion q;
-        q.setRPY(M_PI, 0.0, 0.0);
+        q.setRPY(M_PI, 0, 0.0);
         home_pose.orientation = tf2::toMsg(q);
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
         std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -227,7 +227,7 @@ private:
         auto approach_bottom_right = transformPoint(wall.corners[bottom_right_idx]);
 
         // --- Scale x and y toward zero to bring points closer to robot base ---
-        const double scale_xy = 0.8; // 0 < scale_xy < 1, smaller = closer to (0,0)
+        const double scale_xy = 0.94; // 0 < scale_xy < 1, smaller = closer to (0,0)
         approach_top_left.x *= scale_xy;
         approach_top_left.y *= scale_xy;
         approach_top_right.x *= scale_xy;
@@ -237,9 +237,31 @@ private:
         approach_bottom_right.x *= scale_xy;
         approach_bottom_right.y *= scale_xy;
 
+        // --- Add 0.05 to y after scaling ---
+        const double add_y = -0.135;
+        approach_top_left.y += add_y;
+        approach_top_right.y += add_y;
+        approach_bottom_left.y += add_y;
+        approach_bottom_right.y += add_y;
+
+        // Fix: correct misplaced parenthesis in if statement
+        // if (abs(approach_top_left.x - approach_top_right.x) > abs(approach_bottom_left.y - approach_bottom_right.y)) {
+        //     if (abs(approach_top_left.y) > abs(approach_top_right.y)) {
+        //         approach_top_right.y = approach_top_left.y;
+        //     } else {
+        //         approach_top_left.y = approach_top_right.y;
+        //     }
+        // } else {
+        //     if (abs(approach_bottom_left.x) > abs(approach_bottom_right.x)) {
+        //         approach_bottom_right.x = approach_bottom_left.x;
+        //     } else {
+        //         approach_bottom_left.x = approach_bottom_right.x;
+        //     }
+        // }
+
         // Cap the z value at 0.55 for top, min at 0.15 for bottom
-        if (approach_top_left.z > 0.55) approach_top_left.z = 0.55;
-        if (approach_top_right.z > 0.55) approach_top_right.z = 0.55;
+        // if (approach_top_left.z > 0.55) approach_top_left.z = 0.55;
+        // if (approach_top_right.z > 0.55) approach_top_right.z = 0.55;
         if (approach_bottom_left.z < 0.15) approach_bottom_left.z = 0.15;
         if (approach_bottom_right.z < 0.15) approach_bottom_right.z = 0.15;
 
@@ -267,7 +289,9 @@ private:
         moveToPoint(approach_top_right);
         moveToPoint(approach_bottom_right);
         moveToPoint(approach_bottom_left);
-        RCLCPP_INFO(this->get_logger(), "Movement completed. Exiting...");
+        RCLCPP_INFO(this->get_logger(), "Movement completed. Returning to home position...");
+        moveToHome();
+        RCLCPP_INFO(this->get_logger(), "Returned to home. Exiting...");
         restoreTerminal();
         rclcpp::shutdown();
     }
@@ -312,8 +336,9 @@ private:
                    current_pose.pose.position.z);
         geometry_msgs::msg::Pose target_pose;
         target_pose.position = target_point;
-        // Use the current orientation for the target pose
-        target_pose.orientation = current_pose.pose.orientation;
+        tf2::Quaternion q;
+        q.setRPY(M_PI, M_PI/2, 0.0);
+        target_pose.orientation = tf2::toMsg(q);
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(current_pose.pose);
         waypoints.push_back(target_pose);
