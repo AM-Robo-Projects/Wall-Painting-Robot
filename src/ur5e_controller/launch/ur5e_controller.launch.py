@@ -21,25 +21,20 @@ def generate_launch_description():
         description='Use simulation time if true'
     )
     
-    # Update lidar config file path
     lidar_config_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
         'lidar_config.yaml'
     )
     
-    # Load the config file only once
     config_data = {}
     transform_config = {}
     gui_enabled = False
     try:
         with open(lidar_config_file, 'r') as f:
             config_data = yaml.safe_load(f)
-            
-        # Extract all required configuration values
         transform_config = config_data.get('transform', {})
         gui_enabled = config_data.get('wall_detection', {}).get('enable_crop_box_gui', False)
-        
         print(f"Loaded lidar configuration from {lidar_config_file}")
         print(f"GUI enabled: {gui_enabled}")
     except Exception as e:
@@ -176,7 +171,6 @@ def generate_launch_description():
         ]
     )
     
-    # Define all nodes for the LaunchDescription
     nodes = [
         env_var,
         robot_ip_arg,
@@ -193,7 +187,6 @@ def generate_launch_description():
         wall_detector,
     ]
     
-    # Conditionally add the crop box GUI
     if gui_enabled:
         crop_box_gui = Node(
             package='ur5e_controller',
