@@ -1,9 +1,9 @@
 # Motion Parameters
 motion:
-  approach_step: 0.0035     # Step size for initial wall approach (meters)
+  approach_step: 0.0035    # Step size for initial wall approach (meters)
   max_approach_steps: 100  # Number of steps allowed for wall approach
   velocity_scale: 0.15     # Velocity scaling for movement
-  tool_size: 0.05          # Size of the tool (meters)
+  tool_size: 0.0           # Size of the tool (meters)
   
 # Painting Parameters
 painting:
