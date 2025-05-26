@@ -353,6 +353,7 @@ public:
         progress_bar.finish();
         RCLCPP_INFO(this->get_logger(), "Wall painting completed!");
         moveToHome();
+        rclcpp::shutdown();
     }
 
     bool approachWallUntilContact(const geometry_msgs::msg::Point& start_point, geometry_msgs::msg::Point& contact_point) {
