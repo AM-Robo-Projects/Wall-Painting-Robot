@@ -18,6 +18,9 @@
 #include <fstream>
 #include <string>
 #include <visualization_msgs/msg/marker.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 
 using PointT = pcl::PointXYZ;
@@ -42,21 +45,19 @@ public:
         try {
             config = YAML::LoadFile(config_path);
         } catch (const std::exception &e) {
-            RCLCPP_FATAL(this->get_logger(), "BIG ERROR: Failed to load config file: %s", e.what());
+            RCLCPP_FATAL(this->get_logger(), "Failed to load config file: %s", e.what());
             throw std::runtime_error("Could not load lidar_config.yaml");
         }
 
-        // Default crop box and wall detection values
         min_x_ = -2.0; min_y_ = -3.0; min_z_ = 0.1;
         max_x_ = 0.5; max_y_ = -0.3; max_z_ = 2.0;
         min_wall_points_ = 50;
 
         if (config["wall_detection"]) {
             auto wd = config["wall_detection"];
-            // Check for all required crop box values
             if (!(wd["crop_min_x"] && wd["crop_min_y"] && wd["crop_min_z"] &&
                   wd["crop_max_x"] && wd["crop_max_y"] && wd["crop_max_z"])) {
-                RCLCPP_FATAL(this->get_logger(), "BIG ERROR: Missing crop box values in lidar_config.yaml under wall_detection!");
+                RCLCPP_FATAL(this->get_logger(), "Missing crop box values in lidar_config.yaml under wall_detection!");
                 throw std::runtime_error("Missing crop box values in lidar_config.yaml");
             }
             min_x_ = wd["crop_min_x"].as<double>();
@@ -69,9 +70,50 @@ public:
                 min_wall_points_ = wd["min_wall_points"].as<int>();
             }
         } else {
-            RCLCPP_FATAL(this->get_logger(), "BIG ERROR: No wall_detection section in lidar_config.yaml!");
+            RCLCPP_FATAL(this->get_logger(), "No wall_detection section in lidar_config.yaml!");
             throw std::runtime_error("No wall_detection section in lidar_config.yaml");
         }
+
+        std::string painting_config_path;
+        try {
+            auto pkg_share = ament_index_cpp::get_package_share_directory("ur5e_controller");
+            painting_config_path = pkg_share + "/config/painting_config.yaml";
+        } catch (...) {
+            painting_config_path = std::string(std::getenv("HOME")) + "/Wall-Painting-Robot/src/ur5e_controller/config/painting_config.yaml";
+            RCLCPP_WARN(this->get_logger(), "Could not find package share, using fallback painting config path: %s", painting_config_path.c_str());
+        }
+        YAML::Node painting_config;
+        try {
+            painting_config = YAML::LoadFile(painting_config_path);
+        } catch (const std::exception &e) {
+            RCLCPP_FATAL(this->get_logger(), "Missing painting_config.yaml: %s", e.what());
+            throw std::runtime_error("Could not load painting_config.yaml");
+        }
+        // Painting configuration bounds and robot transform params
+        if (!painting_config["painting"] ||
+            !painting_config["painting"]["min_x"] || !painting_config["painting"]["max_x"] ||
+            !painting_config["painting"]["min_y"] || !painting_config["painting"]["max_y"] ||
+            !painting_config["painting"]["min_z"] || !painting_config["painting"]["max_z"]) {
+            RCLCPP_FATAL(this->get_logger(), "Missing required painting bounds in painting_config.yaml!");
+            throw std::runtime_error("Missing required painting bounds in painting_config.yaml");
+        }
+        painting_min_x_ = painting_config["painting"]["min_x"].as<double>();
+        painting_max_x_ = painting_config["painting"]["max_x"].as<double>();
+        painting_min_y_ = painting_config["painting"]["min_y"].as<double>();
+        painting_max_y_ = painting_config["painting"]["max_y"].as<double>();
+        painting_min_z_ = painting_config["painting"]["min_z"].as<double>();
+        painting_max_z_ = painting_config["painting"]["max_z"].as<double>();
+
+        // Load scale_xy, add_x, add_y from yaml or use defaults
+        scale_xy_ = painting_config["painting"]["scale_xy"] ? painting_config["painting"]["scale_xy"].as<double>() : 0.94;
+        add_y_ = painting_config["painting"]["add_y"] ? painting_config["painting"]["add_y"].as<double>() : -0.135;
+        add_x_ = painting_config["painting"]["add_x"] ? painting_config["painting"]["add_x"].as<double>() : 0.0;
+
+        RCLCPP_INFO(this->get_logger(), "Painting bounds loaded from config:");
+        RCLCPP_INFO(this->get_logger(), "  X: [%.2f, %.2f]", painting_min_x_, painting_max_x_);
+        RCLCPP_INFO(this->get_logger(), "  Y: [%.2f, %.2f]", painting_min_y_, painting_max_y_);
+        RCLCPP_INFO(this->get_logger(), "  Z: [%.2f, %.2f]", painting_min_z_, painting_max_z_);
+        RCLCPP_INFO(this->get_logger(), "Robot transform params: scale_xy=%.3f, add_x=%.3f, add_y=%.3f", scale_xy_, add_x_, add_y_);
 
         // Use correct topic from config (as in livox_converter.py)
         std::string point_cloud_topic = "/livox/point_cloud";
@@ -114,6 +156,10 @@ public:
         param_callback_handle_ = this->add_on_set_parameters_callback(
             std::bind(&WallDetector::on_set_parameters, this, std::placeholders::_1)
         );
+
+        // TF2 buffer and listener for frame transforms
+        tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     }
 
 private:
@@ -126,9 +172,23 @@ private:
     double max_x_, max_y_, max_z_;
     int min_wall_points_;
 
+    // Painting configuration bounds
+    double painting_min_x_, painting_max_x_;
+    double painting_min_y_, painting_max_y_;
+    double painting_min_z_, painting_max_z_;
+    
+    // Robot reach scale and offsets (now configurable)
+    double scale_xy_;
+    double add_x_;
+    double add_y_;
+
     int wall_id_ = 0;
 
     OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
+
+    // TF2 buffer and listener
+    std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     rcl_interfaces::msg::SetParametersResult on_set_parameters(
         const std::vector<rclcpp::Parameter> &params)
@@ -145,8 +205,6 @@ private:
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
         result.reason = "Crop box and wall detection parameters updated";
-        RCLCPP_INFO(this->get_logger(), "Crop box parameters updated: min(%.2f, %.2f, %.2f) max(%.2f, %.2f, %.2f), min_wall_points: %d",
-            min_x_, min_y_, min_z_, max_x_, max_y_, max_z_, min_wall_points_);
         return result;
     }
 
@@ -244,6 +302,60 @@ private:
         }
     }
 
+    // Clamp a point's x/y/z to min/max bounds
+    geometry_msgs::msg::Point boundPoint(const geometry_msgs::msg::Point& pt) {
+        geometry_msgs::msg::Point out = pt;
+        if (out.x < painting_min_x_) out.x = painting_min_x_;
+        if (out.x > painting_max_x_) out.x = painting_max_x_;
+        if (out.y < painting_min_y_) out.y = painting_min_y_;
+        if (out.y > painting_max_y_) out.y = painting_max_y_;
+        if (out.z < painting_min_z_) out.z = painting_min_z_;
+        if (out.z > painting_max_z_) out.z = painting_max_z_;
+        return out;
+    }
+    
+    // Apply robot-specific transformations to a point
+    geometry_msgs::msg::Point applyRobotTransforms(const geometry_msgs::msg::Point& pt) {
+        geometry_msgs::msg::Point result = pt;
+        result = boundPoint(result);
+
+        // Scale x and y toward zero to bring points closer to robot base
+        result.x *= scale_xy_;
+        result.y *= scale_xy_;
+        
+        // Offset x and y after scaling to adjust for robot's reach
+        result.x += add_x_;
+        result.y += add_y_;
+        
+        // Apply bounds to ensure point is within robot's workspace
+        result = boundPoint(result);
+        
+        return result;
+    }
+
+    // Transform a point from livox_frame to base frame
+    geometry_msgs::msg::Point transformToBase(const geometry_msgs::msg::Point& pt_in_lidar) {
+        geometry_msgs::msg::PointStamped input, output;
+        input.header.frame_id = "livox_frame";
+        input.header.stamp = this->now();
+        input.point = pt_in_lidar;
+        try {
+            // Wait for transform to be available
+            if (!tf_buffer_->canTransform("base", "livox_frame", tf2::TimePointZero, tf2::durationFromSec(1.0))) {
+                RCLCPP_ERROR(this->get_logger(), "Transform from livox_frame to base not available!");
+                return pt_in_lidar;
+            }
+            output = tf_buffer_->transform(input, "base", tf2::durationFromSec(1.0));
+            // Negate x and y to match robot base orientation (as in wall_painter)
+            output.point.x = -output.point.x;
+            output.point.y = -output.point.y;
+            return output.point;
+        } catch (const tf2::TransformException& ex) {
+            RCLCPP_ERROR(this->get_logger(), "TF transform failed: %s", ex.what());
+            return pt_in_lidar;
+        }
+    }
+
     // Find wall boundaries and publish marker and corners
     void find_wall_boundaries(pcl::PointCloud<PointT>::Ptr wall_cloud, pcl::ModelCoefficients::Ptr coefficients)
     {
@@ -285,12 +397,53 @@ private:
             corners_3d.push_back(corner);
         }
 
-        // Publish wall corners
-        std_msgs::msg::Float32MultiArray wall_corners;
+        // Transform corners from lidar frame to robot base frame before robot-specific transforms
+        std::vector<geometry_msgs::msg::Point> transformed_corners;
         for (const auto& c : corners_3d) {
-            wall_corners.data.push_back(c.x());
-            wall_corners.data.push_back(c.y());
-            wall_corners.data.push_back(c.z());
+            geometry_msgs::msg::Point corner_point;
+            corner_point.x = c.x();
+            corner_point.y = c.y();
+            corner_point.z = c.z();
+
+            // Transform to robot base frame
+            geometry_msgs::msg::Point base_point = transformToBase(corner_point);
+
+            // Apply robot-specific transformations (scaling, offset, bounds)
+            geometry_msgs::msg::Point transformed_point = applyRobotTransforms(base_point);
+            transformed_corners.push_back(transformed_point);
+        }
+
+        // --- Sort corners: first 2 are top (highest z), right to left (descending x), last 2 are bottom (lowest z), right to left (descending x) ---
+        if (transformed_corners.size() == 4) {
+            // Find top and bottom indices
+            std::vector<size_t> top_indices, bottom_indices;
+            double max_z = std::max({transformed_corners[0].z, transformed_corners[1].z, transformed_corners[2].z, transformed_corners[3].z});
+            double min_z = std::min({transformed_corners[0].z, transformed_corners[1].z, transformed_corners[2].z, transformed_corners[3].z});
+            for (size_t i = 0; i < 4; ++i) {
+                if (std::abs(transformed_corners[i].z - max_z) < 1e-4) top_indices.push_back(i);
+                else if (std::abs(transformed_corners[i].z - min_z) < 1e-4) bottom_indices.push_back(i);
+            }
+            // Sort top by descending x (right to left)
+            std::sort(top_indices.begin(), top_indices.end(), [&](size_t a, size_t b) {
+                return transformed_corners[a].x > transformed_corners[b].x;
+            });
+            // Sort bottom by descending x (right to left)
+            std::sort(bottom_indices.begin(), bottom_indices.end(), [&](size_t a, size_t b) {
+                return transformed_corners[a].x > transformed_corners[b].x;
+            });
+            // Compose sorted_corners: [top_right, top_left, bottom_right, bottom_left]
+            std::vector<geometry_msgs::msg::Point> sorted_corners;
+            for (auto idx : top_indices) sorted_corners.push_back(transformed_corners[idx]);
+            for (auto idx : bottom_indices) sorted_corners.push_back(transformed_corners[idx]);
+            transformed_corners = sorted_corners;
+        }
+
+        // Publish transformed wall corners
+        std_msgs::msg::Float32MultiArray wall_corners;
+        for (const auto& c : transformed_corners) {
+            wall_corners.data.push_back(c.x);
+            wall_corners.data.push_back(c.y);
+            wall_corners.data.push_back(c.z);
         }
         wall_pub_->publish(wall_corners);
 
@@ -309,7 +462,8 @@ private:
         marker.color.a = 1.0f;
         marker.lifetime = rclcpp::Duration::from_seconds(2.0);
 
-        // Add the 4 corners, then repeat the first to close the loop
+        // Add the 4 corners to visualization using the ORIGINAL corners
+        // (not transformed) because the visualization is in the lidar frame
         for (const auto& c : corners_3d) {
             geometry_msgs::msg::Point p;
             p.x = c.x();

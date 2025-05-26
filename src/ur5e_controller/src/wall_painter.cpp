@@ -1,89 +1,389 @@
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/float32_multi_array.hpp>
+#include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2/LinearMath/Quaternion.h>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <termios.h>
-#include <unistd.h>
-#include <signal.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <chrono>
+#include <thread>
+#include <cmath>
 #include <atomic>
+#include <yaml-cpp/yaml.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
 
-std::atomic<bool> g_shutdown_requested(false);
-
-void signalHandler(int signum) {
-    (void)signum;
-    g_shutdown_requested = true;
-    std::cout << "\nShutdown requested. Exiting...\n";
-}
-
-struct Wall {
-    std::vector<geometry_msgs::msg::Point> corners;
-};
-
-class WallPainter : public rclcpp::Node {
+class ForceWallTouch : public rclcpp::Node {
 public:
-    WallPainter() : Node("wall_painter"), initial_setup_(false) {
-        signal(SIGINT, signalHandler);
-        configureTerminal();
-        tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-        move_group_node_ = std::make_shared<rclcpp::Node>(
-            "wall_painter_moveit_node", 
-            rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
+    ForceWallTouch() : Node("force_wall_touch"), force_detected_(false), shutdown_requested_(false), wall_received_(false) {
+        loadParameters();
+
+        rclcpp::on_shutdown([this]() {
+            RCLCPP_INFO(this->get_logger(), "Shutdown requested.");
+            shutdown_requested_ = true;
+            cleanup();
+        });
+
+        wrench_sub_ = this->create_subscription<geometry_msgs::msg::WrenchStamped>(
+            "/force_torque_sensor_broadcaster/wrench", 10,
+            std::bind(&ForceWallTouch::wrench_callback, this, std::placeholders::_1)
         );
-        executor_.add_node(move_group_node_);
-        spinner_ = std::make_shared<std::thread>([this]() { this->executor_.spin(); });
-        RCLCPP_INFO(this->get_logger(), "Setting up MoveIt interface...");
+
+        // Subscribe to detected_walls topic
+        wall_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+            "detected_walls", 10,
+            std::bind(&ForceWallTouch::wall_callback, this, std::placeholders::_1)
+        );
+
+        auto topic_list = this->get_topic_names_and_types();
+        bool force_topic_found = false;
+        for (const auto& topic : topic_list) {
+            if (topic.first == "/force_torque_sensor_broadcaster/wrench") {
+                force_topic_found = true;
+                break;
+            }
+        }
+        if (!force_topic_found) {
+            RCLCPP_ERROR(this->get_logger(), "Force topic NOT found! Is the force torque sensor publisher running?");
+        }
+    }
+
+    void run() {
+        rclcpp::NodeOptions node_options;
+        node_options.automatically_declare_parameters_from_overrides(true);
+
+        move_group_node_ = std::make_shared<rclcpp::Node>(
+            "force_wall_touch_moveit_node",
+            node_options
+        );
+
+        configureMoveItLoggerLevels();
+
+        executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        executor_->add_node(move_group_node_);
+        executor_->add_node(shared_from_this());
+
+        spinner_ = std::make_shared<std::thread>([this]() {
+            while (rclcpp::ok() && !shutdown_requested_) {
+                if (executor_) executor_->spin_some(std::chrono::milliseconds(100));
+            }
+        });
+
         std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        if (shutdown_requested_) {
+            RCLCPP_INFO(this->get_logger(), "Shutdown requested during startup");
+            cleanup();
+            return;
+        }
+
         move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
             move_group_node_, "ur_manipulator");
         move_group_->setMaxVelocityScalingFactor(0.1);
         move_group_->setMaxAccelerationScalingFactor(0.1);
         move_group_->setPlanningTime(1.0);
-        initial_setup_ = true;
-        RCLCPP_INFO(this->get_logger(), "Moving to home position...");
+
         moveToHome();
-        wall_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            "detected_walls", 10, std::bind(&WallPainter::wall_callback, this, std::placeholders::_1));
-        RCLCPP_INFO(this->get_logger(), "Ready to detect walls.");
-        shutdown_thread_ = std::make_shared<std::thread>([this]() {
-            while (!g_shutdown_requested && rclcpp::ok()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        rclcpp::sleep_for(std::chrono::milliseconds(1500)); // Wait for wall detection to update
+
+        // Wait for wall data to be received
+        int wait_count = 0;
+        while (!wall_received_ && rclcpp::ok() && wait_count < 30) {
+            rclcpp::sleep_for(std::chrono::milliseconds(100));
+            wait_count++;
+        }
+        if (!wall_received_) {
+            RCLCPP_ERROR(this->get_logger(), "No wall detected from wall_detector! Aborting.");
+            moveToHome();
+            return;
+        }
+
+        // Use wall_corners_ to get top points and min_z
+        if (wall_corners_.size() < 12) {
+            RCLCPP_ERROR(this->get_logger(), "Wall data received but not enough corners (need 4).");
+            moveToHome();
+            return;
+        }
+        geometry_msgs::msg::Point top1, top2;
+        top1.x = wall_corners_[0];
+        top1.y = wall_corners_[1];
+        top1.z = wall_corners_[2];
+        top2.x = wall_corners_[3];
+        top2.y = wall_corners_[4];
+        top2.z = wall_corners_[5];
+
+        // Find min_z among all 4 corners
+        double min_z = wall_corners_[2];
+        for (size_t i = 2; i < wall_corners_.size(); i += 3) {
+            if (wall_corners_[i] < min_z) min_z = wall_corners_[i];
+        }
+
+        paint_wall(top1, top2, min_z);
+    }
+
+    void configureMoveItLoggerLevels() {
+        const std::vector<std::string> loggers_to_silence = {
+            "move_group_interface",
+            "planning_scene_monitor",
+            "planning_pipeline",
+            "robot_model_loader",
+            "kinematics_plugin_loader",
+            "robot_state",
+            "planning_interface",
+            "moveit_ros.current_state_monitor"
+        };
+
+        for (const auto& logger_name : loggers_to_silence) {
+            auto ret = rcutils_logging_set_logger_level(
+                logger_name.c_str(), RCUTILS_LOG_SEVERITY_WARN);
+            if (ret != RCUTILS_RET_OK) {
+                RCLCPP_WARN(this->get_logger(), "Failed to set logger level for %s", logger_name.c_str());
             }
-            if (g_shutdown_requested) {
-                RCLCPP_INFO(this->get_logger(), "Shutdown requested, terminating...");
+        }
+    }
+
+    ~ForceWallTouch() {
+        cleanup();
+    }
+
+    void cleanup() {
+        if (executor_) {
+            executor_->cancel();
+        }
+        if (spinner_ && spinner_->joinable()) {
+            spinner_->join();
+        }
+    }
+
+    geometry_msgs::msg::WrenchStamped get_latest_wrench() {
+        static geometry_msgs::msg::WrenchStamped latest_wrench;
+        static std::mutex wrench_mutex;
+
+        {
+            std::lock_guard<std::mutex> lock(wrench_mutex);
+            return latest_wrench_;
+        }
+    }
+
+    void wrench_callback(const geometry_msgs::msg::WrenchStamped::SharedPtr msg) {
+        if (std::abs(msg->wrench.force.z) > force_threshold_) {
+            force_detected_ = true;
+        }
+
+        std::lock_guard<std::mutex> lock(wrench_mutex_);
+        latest_wrench_ = *msg;
+    }
+
+    bool force_feedback_detected() {
+        return force_detected_;
+    }
+
+    void loadParameters() {
+        try {
+            std::string package_share_directory = ament_index_cpp::get_package_share_directory("ur5e_controller");
+            std::string config_file = package_share_directory + "/config/painting_config.yaml";
+
+            YAML::Node config = YAML::LoadFile(config_file);
+
+            if (!config["painting"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing 'painting' section in config file");
                 rclcpp::shutdown();
+                exit(EXIT_FAILURE);
             }
-        });
-    }
-    
-    ~WallPainter() {
-        g_shutdown_requested = true;
-        if (shutdown_thread_ && shutdown_thread_->joinable()) {
-            shutdown_thread_->join();
-        }
-        if (spinner_) {
-            executor_.cancel();
-            if (spinner_->joinable()) {
-                spinner_->join();
+
+            auto painting_config = config["painting"];
+            if (!painting_config["horizontal_step"] || !painting_config["force_threshold"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing required painting parameters (horizontal_step, force_threshold)");
+                rclcpp::shutdown();
+                exit(EXIT_FAILURE);
             }
+
+            horizontal_step_ = painting_config["horizontal_step"].as<double>();
+            force_threshold_ = painting_config["force_threshold"].as<double>();
+
+            if (!config["motion"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing 'motion' section in config file");
+                rclcpp::shutdown();
+                exit(EXIT_FAILURE);
+            }
+
+            auto motion_config = config["motion"];
+            if (!motion_config["approach_step"] || !motion_config["max_approach_steps"] ||
+                !motion_config["velocity_scale"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing required motion parameters");
+                rclcpp::shutdown();
+                exit(EXIT_FAILURE);
+            }
+
+            approach_step_ = motion_config["approach_step"].as<double>();
+            max_approach_steps_ = motion_config["max_approach_steps"].as<int>();
+            velocity_scale_ = motion_config["velocity_scale"].as<double>();
+            if (motion_config["tool_size"]) {
+                tool_size_ = motion_config["tool_size"].as<double>();
+            } else {
+                tool_size_ = 0.05;
+            }
+        } catch (const YAML::Exception& e) {
+            RCLCPP_ERROR(this->get_logger(), "YAML parsing error: %s", e.what());
+            rclcpp::shutdown();
+            exit(EXIT_FAILURE);
+        } catch (const std::exception& e) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to load config file: %s", e.what());
+            rclcpp::shutdown();
+            exit(EXIT_FAILURE);
         }
-        restoreTerminal();
     }
 
-    void restoreTerminal() {
-        tcsetattr(STDIN_FILENO, TCSANOW, &old_term_);
+    class ProgressBar {
+    public:
+        ProgressBar(size_t total, size_t width = 50,
+                    std::string prefix = "Progress: ",
+                    std::string fill = "█",
+                    std::string empty = "░")
+            : total_(total), width_(width), prefix_(prefix),
+              fill_char_(fill), empty_char_(empty),
+              last_printed_length_(0), position_(0) {}
+
+        void update(size_t position) {
+            position_ = position;
+            float progress = static_cast<float>(position) / static_cast<float>(total_);
+            std::cout << '\r';
+            std::cout << prefix_;
+            size_t filled_width = static_cast<size_t>(width_ * progress);
+            std::string bar;
+            for (size_t i = 0; i < width_; ++i) {
+                if (i < filled_width) {
+                    bar += fill_char_;
+                } else {
+                    bar += empty_char_;
+                }
+            }
+            int percent = static_cast<int>(100 * progress);
+            std::string output = bar + " " + std::to_string(percent) + "% (" +
+                                std::to_string(position) + "/" + std::to_string(total_) + ")";
+            std::cout << output;
+            last_printed_length_ = output.length() + prefix_.length();
+            std::cout << std::flush;
+        }
+
+        void finish() {
+            update(total_);
+            std::cout << std::endl;
+        }
+
+    private:
+        size_t total_;
+        size_t width_;
+        std::string prefix_;
+        std::string fill_char_;
+        std::string empty_char_;
+        size_t last_printed_length_;
+        size_t position_;
+    };
+
+    void paint_wall(const geometry_msgs::msg::Point& top1, const geometry_msgs::msg::Point& top2, double min_z) {
+        approach_in_x_ = std::abs(top1.x) > std::abs(top1.y);
+        wall_direction_ = approach_in_x_ ? sgn(top1.x) : sgn(top1.y);
+
+        approach_distance_x_ = approach_in_x_ ? approach_step_ * wall_direction_ : 0.0;
+        approach_distance_y_ = approach_in_x_ ? 0.0 : approach_step_ * wall_direction_;
+
+        geometry_msgs::msg::Point offset_top1 = top1;
+        geometry_msgs::msg::Point offset_top2 = top2;
+        if (approach_in_x_) {
+            offset_top1.x -= tool_size_ * wall_direction_;
+            offset_top2.x -= tool_size_ * wall_direction_;
+        } else {
+            offset_top1.y -= tool_size_ * wall_direction_;
+            offset_top2.y -= tool_size_ * wall_direction_;
+        }
+
+        double total_distance = std::sqrt(std::pow(offset_top2.x - offset_top1.x, 2) + std::pow(offset_top2.y - offset_top1.y, 2));
+        int num_columns = static_cast<int>(total_distance / horizontal_step_) + 1;
+
+        ProgressBar progress_bar(num_columns + 1, 40, "Painting Progress: ");
+
+        bool direction_down = true;
+
+        for (int col = 0; col <= num_columns; col++) {
+            if (shutdown_requested_ || !rclcpp::ok()) {
+                RCLCPP_INFO(this->get_logger(), "Shutdown requested, stopping painting.");
+                progress_bar.finish();
+                moveToHome();
+                return;
+            }
+
+            progress_bar.update(col);
+
+            double t = (num_columns > 0) ? static_cast<double>(col) / num_columns : 0.0;
+
+            geometry_msgs::msg::Point current_top, current_bottom;
+            current_top.x = offset_top1.x + t * (offset_top2.x - offset_top1.x);
+            current_top.y = offset_top1.y + t * (offset_top2.y - offset_top1.y);
+            current_top.z = offset_top1.z;
+
+            current_bottom.x = current_top.x;
+            current_bottom.y = current_top.y;
+            current_bottom.z = min_z;
+
+            geometry_msgs::msg::Point start_point = direction_down ? current_top : current_bottom;
+            geometry_msgs::msg::Point end_z_coordinate = direction_down ? current_bottom : current_top;
+
+            moveToPoint(start_point);
+
+            geometry_msgs::msg::Point contact_point;
+            if (!approachWallUntilContact(start_point, contact_point)) {
+                moveToHome();
+                progress_bar.finish();
+                return;
+            }
+
+            contact_point.z = end_z_coordinate.z;
+            moveToPoint(contact_point, velocity_scale_);
+
+            direction_down = !direction_down;
+
+            if (shutdown_requested_ || !rclcpp::ok()) {
+                RCLCPP_INFO(this->get_logger(), "Shutdown requested, stopping painting.");
+                progress_bar.finish();
+                break;
+            }
+        }
+
+        progress_bar.finish();
+        RCLCPP_INFO(this->get_logger(), "Wall painting completed!");
+        moveToHome();
     }
 
-private:
+    bool approachWallUntilContact(const geometry_msgs::msg::Point& start_point, geometry_msgs::msg::Point& contact_point) {
+        geometry_msgs::msg::Point approach = start_point;
+        force_detected_ = false;
+        contact_point = start_point;
+
+        for (int i = 0; i < max_approach_steps_; ++i) {
+            if (shutdown_requested_ || !rclcpp::ok()) {
+                RCLCPP_INFO(this->get_logger(), "Shutdown requested during wall approach, aborting.");
+                return false;
+            }
+
+            if (force_feedback_detected()) {
+                geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
+                contact_point = current_pose.pose.position;
+                return true;
+            }
+
+            approach.x += approach_distance_x_;
+            approach.y += approach_distance_y_;
+
+            moveToPoint(approach, velocity_scale_);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        RCLCPP_ERROR(this->get_logger(), "Could not establish wall contact after %d steps", max_approach_steps_);
+        return false;
+    }
+
     void moveToHome() {
-        RCLCPP_INFO(this->get_logger(), "Moving to home position");
         geometry_msgs::msg::Pose home_pose;
         home_pose.position.x = 0.00;
         home_pose.position.y = 0.33;
@@ -91,310 +391,108 @@ private:
         tf2::Quaternion q;
         q.setRPY(M_PI, 0, 0.0);
         home_pose.orientation = tf2::toMsg(q);
+
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(current_pose.pose);
         waypoints.push_back(home_pose);
+
         move_group_->setMaxVelocityScalingFactor(0.1);
         move_group_->setMaxAccelerationScalingFactor(0.1);
         move_group_->setPlanningTime(1.0);
-        RCLCPP_INFO(this->get_logger(), "Planning Cartesian path to home...");
-        // --- Add missing variable declarations ---
+
         moveit_msgs::msg::RobotTrajectory trajectory;
         const double eef_step = 0.005;
         const double jump_threshold = 0.0;
+
         double fraction = move_group_->computeCartesianPath(
             waypoints, eef_step, jump_threshold, trajectory);
+
         if (fraction > 0.95) {
-            RCLCPP_INFO(this->get_logger(), "Cartesian path to home computed (%.2f%% achieved)", fraction * 100.0);
-            bool cart_success = (move_group_->execute(trajectory) == moveit::core::MoveItErrorCode::SUCCESS);
-            if (cart_success) {
-                RCLCPP_INFO(this->get_logger(), "Home position reached successfully");
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "Failed to execute Cartesian path to home");
-                restoreTerminal();
-                rclcpp::shutdown();
-                exit(1);
-            }
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to compute Cartesian path to home (only %.2f%% achieved)", fraction * 100.0);
-            restoreTerminal();
-            rclcpp::shutdown();
-            exit(1);
+            move_group_->execute(trajectory);
         }
     }
-    
-    void wall_callback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
-        if (g_shutdown_requested) {
-            return;
-        }
-        if (msg->data.size() != 12) {
-            RCLCPP_WARN(this->get_logger(), "Expected 12 floats (4 corners), got %zu. Ignoring.", msg->data.size());
-            return;
-        }
-        Wall wall;
-        for (int i = 0; i < 4; ++i) {
-            geometry_msgs::msg::Point corner;
-            corner.x = msg->data[i * 3 + 0];
-            corner.y = msg->data[i * 3 + 1];
-            corner.z = msg->data[i * 3 + 2];
-            wall.corners.push_back(corner);
-        }
-        processWall(wall);
-        wall_subscription_.reset();
-    }
-    
-    void processWall(const Wall& wall) {
-        RCLCPP_INFO(this->get_logger(), "=== Wall Found ===");
-        RCLCPP_INFO(this->get_logger(), "Corner coordinates in LiDAR frame:");
-        for (size_t i = 0; i < wall.corners.size(); ++i) {
-            RCLCPP_INFO(this->get_logger(), "Corner %zu: (%.3f, %.3f, %.3f)",
-                       i, wall.corners[i].x, wall.corners[i].y, wall.corners[i].z);
-        }
 
-        // --- Find the two top corners (highest z), assign left/right by x ---
-        std::vector<size_t> top_indices;
-        float max_z = -std::numeric_limits<float>::infinity();
-        for (size_t i = 0; i < wall.corners.size(); ++i) {
-            if (wall.corners[i].z > max_z) {
-                max_z = wall.corners[i].z;
-            }
-        }
-        for (size_t i = 0; i < wall.corners.size(); ++i) {
-            if (std::abs(wall.corners[i].z - max_z) < 1e-4) {
-                top_indices.push_back(i);
-            }
-        }
-        while (top_indices.size() > 2) {
-            size_t min_y_idx = top_indices[0];
-            for (size_t i = 1; i < top_indices.size(); ++i) {
-                if (wall.corners[top_indices[i]].y < wall.corners[min_y_idx].y) {
-                    min_y_idx = top_indices[i];
-                }
-            }
-            top_indices.erase(std::remove(top_indices.begin(), top_indices.end(), min_y_idx), top_indices.end());
-        }
-        size_t top_left_idx, top_right_idx;
-        if (wall.corners[top_indices[0]].x < wall.corners[top_indices[1]].x) {
-            top_left_idx = top_indices[0];
-            top_right_idx = top_indices[1];
-        } else {
-            top_left_idx = top_indices[1];
-            top_right_idx = top_indices[0];
-        }
-        RCLCPP_INFO(this->get_logger(), "Selected top corners: idx %zu (z=%.3f, x=%.3f) and idx %zu (z=%.3f, x=%.3f)",
-            top_left_idx, wall.corners[top_left_idx].z, wall.corners[top_left_idx].x,
-            top_right_idx, wall.corners[top_right_idx].z, wall.corners[top_right_idx].x);
-
-        // --- Find the two bottom corners (lowest z), assign left/right by x ---
-        std::vector<size_t> bottom_indices;
-        float min_z = std::numeric_limits<float>::infinity();
-        for (size_t i = 0; i < wall.corners.size(); ++i) {
-            if (wall.corners[i].z < min_z) {
-                min_z = wall.corners[i].z;
-            }
-        }
-        for (size_t i = 0; i < wall.corners.size(); ++i) {
-            if (std::abs(wall.corners[i].z - min_z) < 1e-4) {
-                bottom_indices.push_back(i);
-            }
-        }
-        while (bottom_indices.size() > 2) {
-            size_t min_y_idx = bottom_indices[0];
-            for (size_t i = 1; i < bottom_indices.size(); ++i) {
-                if (wall.corners[bottom_indices[i]].y < wall.corners[min_y_idx].y) {
-                    min_y_idx = bottom_indices[i];
-                }
-            }
-            bottom_indices.erase(std::remove(bottom_indices.begin(), bottom_indices.end(), min_y_idx), bottom_indices.end());
-        }
-        size_t bottom_left_idx, bottom_right_idx;
-        if (wall.corners[bottom_indices[0]].x < wall.corners[bottom_indices[1]].x) {
-            bottom_left_idx = bottom_indices[0];
-            bottom_right_idx = bottom_indices[1];
-        } else {
-            bottom_left_idx = bottom_indices[1];
-            bottom_right_idx = bottom_indices[0];
-        }
-        RCLCPP_INFO(this->get_logger(), "Selected bottom corners: idx %zu (z=%.3f, x=%.3f) and idx %zu (z=%.3f, x=%.3f)",
-            bottom_left_idx, wall.corners[bottom_left_idx].z, wall.corners[bottom_left_idx].x,
-            bottom_right_idx, wall.corners[bottom_right_idx].z, wall.corners[bottom_right_idx].x);
-
-        // Only transform the two top corners (no normal/offset logic)
-        auto approach_top_left = transformPoint(wall.corners[top_left_idx]);
-        auto approach_top_right = transformPoint(wall.corners[top_right_idx]);
-        auto approach_bottom_left = transformPoint(wall.corners[bottom_left_idx]);
-        auto approach_bottom_right = transformPoint(wall.corners[bottom_right_idx]);
-
-        // --- Scale x and y toward zero to bring points closer to robot base ---
-        const double scale_xy = 0.94; // 0 < scale_xy < 1, smaller = closer to (0,0)
-        approach_top_left.x *= scale_xy;
-        approach_top_left.y *= scale_xy;
-        approach_top_right.x *= scale_xy;
-        approach_top_right.y *= scale_xy;
-        approach_bottom_left.x *= scale_xy;
-        approach_bottom_left.y *= scale_xy;
-        approach_bottom_right.x *= scale_xy;
-        approach_bottom_right.y *= scale_xy;
-
-        // --- Add 0.05 to y after scaling ---
-        const double add_y = -0.135;
-        approach_top_left.y += add_y;
-        approach_top_right.y += add_y;
-        approach_bottom_left.y += add_y;
-        approach_bottom_right.y += add_y;
-
-        // Fix: correct misplaced parenthesis in if statement
-        // if (abs(approach_top_left.x - approach_top_right.x) > abs(approach_bottom_left.y - approach_bottom_right.y)) {
-        //     if (abs(approach_top_left.y) > abs(approach_top_right.y)) {
-        //         approach_top_right.y = approach_top_left.y;
-        //     } else {
-        //         approach_top_left.y = approach_top_right.y;
-        //     }
-        // } else {
-        //     if (abs(approach_bottom_left.x) > abs(approach_bottom_right.x)) {
-        //         approach_bottom_right.x = approach_bottom_left.x;
-        //     } else {
-        //         approach_bottom_left.x = approach_bottom_right.x;
-        //     }
-        // }
-
-        // Cap the z value at 0.55 for top, min at 0.15 for bottom
-        // if (approach_top_left.z > 0.55) approach_top_left.z = 0.55;
-        // if (approach_top_right.z > 0.55) approach_top_right.z = 0.55;
-        if (approach_bottom_left.z < 0.15) approach_bottom_left.z = 0.15;
-        if (approach_bottom_right.z < 0.15) approach_bottom_right.z = 0.15;
-
-        // --- LOGGING AND MOVEMENT ---
-        RCLCPP_INFO(this->get_logger(), "Approach Top Left: (%.3f, %.3f, %.3f)", 
-                   approach_top_left.x, approach_top_left.y, approach_top_left.z);
-        RCLCPP_INFO(this->get_logger(), "Approach Top Right: (%.3f, %.3f, %.3f)", 
-                   approach_top_right.x, approach_top_right.y, approach_top_right.z);
-        RCLCPP_INFO(this->get_logger(), "Approach Bottom Left: (%.3f, %.3f, %.3f)", 
-                   approach_bottom_left.x, approach_bottom_left.y, approach_bottom_left.z);
-        RCLCPP_INFO(this->get_logger(), "Approach Bottom Right: (%.3f, %.3f, %.3f)", 
-                   approach_bottom_right.x, approach_bottom_right.y, approach_bottom_right.z);
-
-        RCLCPP_INFO(this->get_logger(), "Top corner coordinates in robot base_link frame (adjusted):");
-        RCLCPP_INFO(this->get_logger(), "Top Left: (%.3f, %.3f, %.3f)", 
-                   approach_top_left.x, approach_top_left.y, approach_top_left.z);
-        RCLCPP_INFO(this->get_logger(), "Top Right: (%.3f, %.3f, %.3f)", 
-                   approach_top_right.x, approach_top_right.y, approach_top_right.z);
-        RCLCPP_INFO(this->get_logger(), "Bottom Left: (%.3f, %.3f, %.3f)", 
-                   approach_bottom_left.x, approach_bottom_left.y, approach_bottom_left.z);
-        RCLCPP_INFO(this->get_logger(), "Bottom Right: (%.3f, %.3f, %.3f)", 
-                   approach_bottom_right.x, approach_bottom_right.y, approach_bottom_right.z);
-
-        moveToPoint(approach_top_left);
-        moveToPoint(approach_top_right);
-        moveToPoint(approach_bottom_right);
-        moveToPoint(approach_bottom_left);
-        RCLCPP_INFO(this->get_logger(), "Movement completed. Returning to home position...");
-        moveToHome();
-        RCLCPP_INFO(this->get_logger(), "Returned to home. Exiting...");
-        restoreTerminal();
-        rclcpp::shutdown();
-    }
-    
-    geometry_msgs::msg::Point transformPoint(const geometry_msgs::msg::Point& point_in_lidar) {
-        // Use tf2_ros to transform the point from LiDAR frame to robot base frame
-        geometry_msgs::msg::PointStamped input_point, output_point;
-        input_point.header.frame_id = "livox_frame"; // must match static_transform_publisher child_frame
-        input_point.header.stamp = this->now();
-        input_point.point = point_in_lidar;
-        try {
-            // Wait for transform to be available
-            if (!tf_buffer_->canTransform("base", "livox_frame", tf2::TimePointZero, tf2::durationFromSec(1.0))) {
-                RCLCPP_ERROR(this->get_logger(), "Transform from livox_frame to base not available!");
-                restoreTerminal();
-                rclcpp::shutdown();
-                exit(1);
-            }
-            output_point = tf_buffer_->transform(input_point, "base", tf2::durationFromSec(1.0));
-            // change the output point to -x and -y
-            output_point.point.x = -output_point.point.x;
-            output_point.point.y = -output_point.point.y;
-        } catch (const tf2::TransformException& ex) {
-            RCLCPP_ERROR(this->get_logger(), "TF transform failed: %s", ex.what());
-            restoreTerminal();
-            rclcpp::shutdown();
-            exit(1);
-        }
-        RCLCPP_INFO(this->get_logger(), "Point transformed (tf2) from (%.3f, %.3f, %.3f) to (%.3f, %.3f, %.3f)",
-            point_in_lidar.x, point_in_lidar.y, point_in_lidar.z,
-            output_point.point.x, output_point.point.y, output_point.point.z);
-        return output_point.point;
-    }
-    
-    void moveToPoint(const geometry_msgs::msg::Point& target_point) {
-        RCLCPP_INFO(this->get_logger(), "Moving to position: (%.3f, %.3f, %.3f)",
-                   target_point.x, target_point.y, target_point.z);
+    void moveToPoint(const geometry_msgs::msg::Point& target_point, double vel_scale = 0.05) {
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
-        RCLCPP_INFO(this->get_logger(), "Current position: (%.3f, %.3f, %.3f)",
-                   current_pose.pose.position.x, 
-                   current_pose.pose.position.y, 
-                   current_pose.pose.position.z);
         geometry_msgs::msg::Pose target_pose;
         target_pose.position = target_point;
         tf2::Quaternion q;
         q.setRPY(M_PI, M_PI/2, 0.0);
         target_pose.orientation = tf2::toMsg(q);
+
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(current_pose.pose);
         waypoints.push_back(target_pose);
-        move_group_->setMaxVelocityScalingFactor(0.05);
-        move_group_->setMaxAccelerationScalingFactor(0.05);
+
+        move_group_->setMaxVelocityScalingFactor(vel_scale);
+        move_group_->setMaxAccelerationScalingFactor(vel_scale);
+
         moveit_msgs::msg::RobotTrajectory trajectory;
         const double eef_step = 0.005;
         const double jump_threshold = 0.0;
-        RCLCPP_INFO(this->get_logger(), "Planning Cartesian path...");
+
         double fraction = move_group_->computeCartesianPath(
             waypoints, eef_step, jump_threshold, trajectory
         );
+
         if (fraction > 0.95) {
-            RCLCPP_INFO(this->get_logger(), "Cartesian path computed (%.2f%% achieved)", fraction * 100.0);
-            bool success = (move_group_->execute(trajectory) == moveit::core::MoveItErrorCode::SUCCESS);
-            if (success) {
-                RCLCPP_INFO(this->get_logger(), "Movement completed successfully");
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "Failed to execute Cartesian path");
-                restoreTerminal();
-                rclcpp::shutdown();
-                exit(1);
-            }
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to compute complete Cartesian path (only %.2f%% achieved)", fraction * 100.0);
-            restoreTerminal();
-            rclcpp::shutdown();
-            exit(1);
+            move_group_->execute(trajectory);
         }
     }
-    
-    void configureTerminal() {
-        struct termios t;
-        tcgetattr(STDIN_FILENO, &old_term_);
-        t = old_term_;
-        t.c_lflag &= ~(ICANON | ECHO);
-        tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+    void wall_callback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+        if (msg->data.size() >= 12) {
+            std::lock_guard<std::mutex> lock(wall_mutex_);
+            wall_corners_ = msg->data;
+            wall_received_ = true;
+        }
     }
-    
-    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr wall_subscription_;
+private:
     std::shared_ptr<rclcpp::Node> move_group_node_;
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
-    rclcpp::executors::SingleThreadedExecutor executor_;
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
     std::shared_ptr<std::thread> spinner_;
-    std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-    struct termios old_term_;
-    bool initial_setup_;
-    std::shared_ptr<std::thread> shutdown_thread_;
+    rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr wall_sub_;
+    std::atomic<bool> force_detected_;
+
+    geometry_msgs::msg::WrenchStamped latest_wrench_;
+    std::mutex wrench_mutex_;
+
+    double horizontal_step_;
+    double approach_step_;
+    int max_approach_steps_;
+    double velocity_scale_;
+    double force_threshold_;
+    double tool_size_; // Add this member
+    int wall_direction_;
+    bool approach_in_x_;
+    double approach_distance_x_;
+    double approach_distance_y_;
+
+    bool shutdown_requested_;
+
+    std::vector<float> wall_corners_;
+    std::mutex wall_mutex_;
+    std::atomic<bool> wall_received_;
+
+    static int sgn(double val) {
+        return (val > 0) - (val < 0);
+    }
 };
 
 int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
-    auto wall_painter = std::make_shared<WallPainter>();
-    rclcpp::spin(wall_painter);
-    wall_painter->restoreTerminal();
+    auto node = std::make_shared<ForceWallTouch>();
+
+    rclcpp::spin_some(node);
+
+    node->run();
+
+    // Ensure cleanup is called before shutdown to join spinner thread
+    node->cleanup();
+
     rclcpp::shutdown();
     return 0;
 }

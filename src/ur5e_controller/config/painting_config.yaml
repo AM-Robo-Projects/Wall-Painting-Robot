@@ -1,0 +1,20 @@
+# Motion Parameters
+motion:
+  approach_step: 0.0035     # Step size for initial wall approach (meters)
+  max_approach_steps: 100  # Number of steps allowed for wall approach
+  velocity_scale: 0.15     # Velocity scaling for movement
+  tool_size: 0.05          # Size of the tool (meters)
+  
+# Painting Parameters
+painting:
+  min_x: -0.65             # Minimum x value (meters)
+  max_x: 0.65              # Maximum x value (meters)
+  min_y: -0.65             # Minimum y value (meters)
+  max_y: 0.65              # Maximum y value (meters)
+  min_z: 0.35              # Minimum z value (meters)
+  max_z: 0.75              # Maximum z value (meters)
+  horizontal_step: 0.015   # Horizontal step between columns (meters)
+  force_threshold: 15.0    # Threshold for detecting wall contact (Newtons)
+  scale_xy: 0.94           # Scale factor for x/y toward robot base (default: 0.94)
+  add_x: 0.0               # Offset for x after scaling (default: 0.0)
+  add_y: -0.135            # Offset for y after scaling (default: -0.135)

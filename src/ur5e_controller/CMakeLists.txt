@@ -25,7 +25,9 @@ find_package(std_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(yaml-cpp REQUIRED)  # Added YAML-CPP dependency
+find_package(yaml-cpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+
 
 add_executable(robot_mover src/robot_mover.cpp)
 ament_target_dependencies(
@@ -51,8 +53,9 @@ ament_target_dependencies(
   visualization_msgs
   tf2
   tf2_ros
+  tf2_geometry_msgs
 )
-target_link_libraries(wall_detector ${PCL_LIBRARIES} yaml-cpp)  # Fixed target name
+target_link_libraries(wall_detector ${PCL_LIBRARIES} yaml-cpp)
 
 add_executable(wall_painter src/wall_painter.cpp)
 ament_target_dependencies(
