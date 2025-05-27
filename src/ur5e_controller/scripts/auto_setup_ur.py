@@ -366,6 +366,12 @@ def main(args=None):
     try:
         setup.setup_robot()
         setup.get_logger().info("Robot setup completed.")
+        
+        # Add distinctive colored message to indicate ready state
+        setup.get_logger().info("\033[92m" + "="*25 + "\033[0m")
+        setup.get_logger().info("\033[92m" + "ROBOT IS READY FOR USE " + "\033[0m")
+        setup.get_logger().info("\033[92m" + "="*25 + "\033[0m")
+        
     except KeyboardInterrupt:
         setup.get_logger().info("Keyboard interrupt, shutting down...")
     except Exception as e:
