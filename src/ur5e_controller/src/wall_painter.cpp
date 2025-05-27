@@ -373,7 +373,9 @@ public:
             direction_down = !direction_down;
 
             if (std::find(refuel_columns.begin(), refuel_columns.end(), col) != refuel_columns.end()) {
-                performRefuel();
+                if (num_refuels_ > 0) {
+                    performRefuel();
+                }
             }
 
             if (shutdown_requested_ || !rclcpp::ok()) {
