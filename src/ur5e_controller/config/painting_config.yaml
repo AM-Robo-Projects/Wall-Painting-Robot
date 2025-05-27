@@ -14,7 +14,7 @@ painting:
   min_z: 0.35              # Minimum z value (meters)
   max_z: 0.75              # Maximum z value (meters)
   horizontal_step: 0.015   # Horizontal step between columns (meters)
-  force_threshold: 15.0    # Threshold for detecting wall contact (Newtons)
+  force_threshold: 25.0    # Threshold for detecting wall contact (Newtons)
   scale_xy: 0.94           # Scale factor for x/y toward robot base (default: 0.94)
   add_x: 0.0               # Offset for x after scaling (default: 0.0)
   add_y: -0.135            # Offset for y after scaling (default: -0.135)
