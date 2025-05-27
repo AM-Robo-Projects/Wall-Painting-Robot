@@ -202,6 +202,17 @@ public:
                 num_refuels_ = 0;
             }
 
+            // Load painting orientation (default to M_PI, M_PI/2, 0.0 if not present)
+            if (painting_config["painting_orientation_roll"] && painting_config["painting_orientation_pitch"] && painting_config["painting_orientation_yaw"]) {
+                painting_orientation_roll_ = painting_config["painting_orientation_roll"].as<double>();
+                painting_orientation_pitch_ = painting_config["painting_orientation_pitch"].as<double>();
+                painting_orientation_yaw_ = painting_config["painting_orientation_yaw"].as<double>();
+            } else {
+                painting_orientation_roll_ = M_PI;
+                painting_orientation_pitch_ = M_PI/2;
+                painting_orientation_yaw_ = 0.0;
+            }
+
             if (!config["motion"]) {
                 RCLCPP_ERROR(this->get_logger(), "Missing 'motion' section in config file");
                 rclcpp::shutdown();
@@ -322,7 +333,6 @@ public:
         double total_distance = std::sqrt(std::pow(offset_top2.x - offset_top1.x, 2) + std::pow(offset_top2.y - offset_top1.y, 2));
         int num_columns = static_cast<int>(total_distance / horizontal_step_) + 1;
 
-        // Clear previous contact points
         top_contact_points_.clear();
         bottom_contact_points_.clear();
 
@@ -371,7 +381,6 @@ public:
                 return;
             }
 
-            // Save contact points for rounding pass
             geometry_msgs::msg::Point top_contact = contact_point;
             top_contact.z = current_top.z;
             geometry_msgs::msg::Point bottom_contact = contact_point;
@@ -400,7 +409,6 @@ public:
 
         progress_bar.finish();
         
-        // Perform rounding pass
         if (!top_contact_points_.empty() && !bottom_contact_points_.empty()) {
             performRoundingPass();
         }
@@ -416,24 +424,15 @@ public:
             return;
         }
 
-        // Move to home position first
-        moveToHome();
-        // Wait for robot to stabilize
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        const double contact_point_scale = 1;
 
-        // Scaling factor for contact points to avoid wall scraping
-        const double contact_point_scale = 0.985;
-
-        // Helper lambda to scale points based on wall direction
         auto scale_points = [&](const std::vector<geometry_msgs::msg::Point>& points) {
             std::vector<geometry_msgs::msg::Point> scaled_points;
             for (const auto& point : points) {
                 geometry_msgs::msg::Point scaled_point = point;
                 if (approach_in_x_) {
-                    // For X-direction walls, only scale X coordinate
                     scaled_point.x *= contact_point_scale;
                 } else {
-                    // For Y-direction walls, only scale Y coordinate
                     scaled_point.y *= contact_point_scale;
                 }
                 scaled_points.push_back(scaled_point);
@@ -441,63 +440,66 @@ public:
             return scaled_points;
         };
 
-        // Scale both top and bottom contact points
         std::vector<geometry_msgs::msg::Point> scaled_top_points = scale_points(top_contact_points_);
         std::vector<geometry_msgs::msg::Point> scaled_bottom_points = scale_points(bottom_contact_points_);
 
-        RCLCPP_INFO(this->get_logger(), "Starting rounding pass...");
+        std::vector<geometry_msgs::msg::Point> simplified_top_points = simplifyPoints(scaled_top_points, 5);
+        std::vector<geometry_msgs::msg::Point> simplified_bottom_points = simplifyPoints(scaled_bottom_points, 5);
 
-        // Move to starting position (first top point)
-        moveToPoint(scaled_top_points.front());
+        RCLCPP_INFO(this->get_logger(), "Starting rounding pass with simplified waypoints (%zu top, %zu bottom)...", 
+                    simplified_top_points.size(), simplified_bottom_points.size());
 
-        // Create waypoints for the complete rectangle path
         std::vector<geometry_msgs::msg::Pose> waypoints;
         
-        // Add current pose as starting point
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
         waypoints.push_back(current_pose.pose);
 
-        // Top horizontal pass (left to right)
-        for (size_t i = 1; i < scaled_top_points.size(); ++i) {
+        geometry_msgs::msg::PoseStamped current_pose_scaled = move_group_->getCurrentPose();
+        current_pose_scaled.pose.position.x *= .95;
+        current_pose_scaled.pose.position.y *= .95;
+        waypoints.push_back(current_pose_scaled.pose);
+
+        geometry_msgs::msg::Pose first_pose;
+        first_pose.position = simplified_top_points.front();
+        first_pose.position.x *= 0.95;
+        first_pose.position.y *= 0.95;
+        tf2::Quaternion q;
+        q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
+        first_pose.orientation = tf2::toMsg(q);
+        waypoints.push_back(first_pose);
+
+        for (size_t i = 0; i < simplified_top_points.size(); ++i) {
             geometry_msgs::msg::Pose pose;
-            pose.position = scaled_top_points[i];
-            tf2::Quaternion q;
-            q.setRPY(M_PI, M_PI/2, 0.0);
+            pose.position = simplified_top_points[i];
+            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
             pose.orientation = tf2::toMsg(q);
             waypoints.push_back(pose);
         }
 
-        // Right vertical pass (top to bottom)
-        if (!scaled_bottom_points.empty()) {
+        if (!simplified_bottom_points.empty()) {
             geometry_msgs::msg::Pose pose;
-            pose.position = scaled_bottom_points.back();
-            tf2::Quaternion q;
-            q.setRPY(M_PI, M_PI/2, 0.0);
+            pose.position = simplified_bottom_points.back();
+            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
             pose.orientation = tf2::toMsg(q);
             waypoints.push_back(pose);
         }
 
-        // Bottom horizontal pass (right to left)
-        for (int i = static_cast<int>(scaled_bottom_points.size()) - 2; i >= 0; --i) {
+        for (int i = static_cast<int>(simplified_bottom_points.size()) - 2; i >= 0; --i) {
             geometry_msgs::msg::Pose pose;
-            pose.position = scaled_bottom_points[i];
-            tf2::Quaternion q;
-            q.setRPY(M_PI, M_PI/2, 0.0);
+            pose.position = simplified_bottom_points[i];
+            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
             pose.orientation = tf2::toMsg(q);
             waypoints.push_back(pose);
         }
 
-        // Left vertical pass (bottom to top) - close the rectangle
-        if (!scaled_top_points.empty()) {
+        if (!simplified_top_points.empty()) {
             geometry_msgs::msg::Pose pose;
-            pose.position = scaled_top_points.front();
-            tf2::Quaternion q;
-            q.setRPY(M_PI, M_PI/2, 0.0);
+            pose.position = simplified_top_points.front();
+            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
             pose.orientation = tf2::toMsg(q);
             waypoints.push_back(pose);
         }
 
-        // Execute the complete rounding pass as a single smooth movement
         move_group_->setMaxVelocityScalingFactor(velocity_scale_);
         move_group_->setMaxAccelerationScalingFactor(velocity_scale_);
 
@@ -517,11 +519,37 @@ public:
         }
     }
 
+    std::vector<geometry_msgs::msg::Point> simplifyPoints(const std::vector<geometry_msgs::msg::Point>& points, size_t target_count) {
+        if (points.size() <= target_count) {
+            return points;
+        }
+        
+        std::vector<geometry_msgs::msg::Point> result;
+        
+        result.push_back(points.front());
+        
+        if (target_count > 2) {
+            size_t internal_points = target_count - 2;
+            double segment = static_cast<double>(points.size() - 2) / internal_points;
+            for (size_t i = 1; i <= internal_points; ++i) {
+                size_t index = 1 + static_cast<size_t>(i * segment);
+                if (index >= points.size() - 1) {
+                    index = points.size() - 2;
+                }
+                result.push_back(points[index]);
+            }
+        }
+        
+        result.push_back(points.back());
+        
+        return result;
+    }
+    
     void performRefuel() {
         moveToHome();
         geometry_msgs::msg::PoseStamped home_pose = move_group_->getCurrentPose();
         geometry_msgs::msg::Pose down_pose = home_pose.pose;
-        down_pose.position.z -= 0.10;
+        down_pose.position.z -= 0.05;
 
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(home_pose.pose);
@@ -635,7 +663,7 @@ public:
         geometry_msgs::msg::Pose target_pose;
         target_pose.position = target_point;
         tf2::Quaternion q;
-        q.setRPY(M_PI, M_PI/2, 0.0);
+        q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
         target_pose.orientation = tf2::toMsg(q);
 
         std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -697,6 +725,9 @@ private:
 
     double home_x_, home_y_, home_z_;
     double home_roll_, home_pitch_, home_yaw_;
+
+    // Add painting orientation variables
+    double painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_;
 
     std::vector<geometry_msgs::msg::Point> top_contact_points_;
     std::vector<geometry_msgs::msg::Point> bottom_contact_points_;
