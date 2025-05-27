@@ -7,14 +7,14 @@ motion:
   
 # Painting Parameters
 painting:
-  min_x: -0.65             # Minimum x value (meters)
-  max_x: 0.65              # Maximum x value (meters)
-  min_y: -0.65             # Minimum y value (meters)
-  max_y: 0.65              # Maximum y value (meters)
+  min_x: -0.6              # Minimum x value (meters)
+  max_x: 0.6               # Maximum x value (meters)
+  min_y: -0.6              # Minimum y value (meters)
+  max_y: 0.6               # Maximum y value (meters)
   min_z: 0.35              # Minimum z value (meters)
   max_z: 0.75              # Maximum z value (meters)
   horizontal_step: 0.015   # Horizontal step between columns (meters)
-  force_threshold: 25.0    # Threshold for detecting wall contact (Newtons)
+  force_threshold: 30.0    # Threshold for detecting wall contact (Newtons)
   scale_xy: 0.94           # Scale factor for x/y toward robot base (default: 0.94)
   add_x: 0.0               # Offset for x after scaling (default: 0.0)
   add_y: -0.135            # Offset for y after scaling (default: -0.135)
