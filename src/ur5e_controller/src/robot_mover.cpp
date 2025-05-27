@@ -201,7 +201,7 @@ public:
     std::cout << "LINEAR: W/S:±X  A/D:±Y  Q/E:±Z\n";
     std::cout << "ORIENT: U/O:±Roll  I/K:±Pitch  J/L:±Yaw\n";
     std::cout << "STEP CONTROL: M/N:±LinInc  B/V:±AngInc  1/2:±LinStep  3/4:±AngStep\n";
-    std::cout << "SPECIAL: F:Down  R:Sync  T:ForceToggle  X:Exit\n";
+    std::cout << "SPECIAL: F:Down  R:Sync  T:ForceToggle  H:Home  X:Exit\n";
     std::cout << separator << "\n\n";
   }
   
@@ -345,6 +345,24 @@ public:
             std::cout << "Angular increment decreased to: " << angular_increment_ << " rad\n";
           }
           break;
+        case 'h': case 'H': {
+          if (force_feedback_enabled_) {
+            std::cout << "Disabling force feedback before moving home..." << std::endl;
+            toggleForceFeedback();
+          }
+          std::cout << "Moving to HOME position...\n";
+          geometry_msgs::msg::Pose home_pose;
+          home_pose.position.x = 0.00;
+          home_pose.position.y = 0.33;
+          home_pose.position.z = 0.40;
+          tf2::Quaternion q;
+          q.setRPY(3.14, 0.0, 0.0);
+          home_pose.orientation = tf2::toMsg(q);
+          moveToPosition(home_pose);
+          getCurrentPose();
+          printInstructions();
+          break;
+        }
         case 'x': case 'X': case 27:
           exit = true;
           std::cout << "Exiting...\n";
