@@ -29,7 +29,6 @@ public:
             std::bind(&ForceWallTouch::wrench_callback, this, std::placeholders::_1)
         );
 
-        // Subscribe to detected_walls topic
         wall_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
             "detected_walls", 10,
             std::bind(&ForceWallTouch::wall_callback, this, std::placeholders::_1)
@@ -84,9 +83,8 @@ public:
         move_group_->setPlanningTime(1.0);
 
         moveToHome();
-        rclcpp::sleep_for(std::chrono::milliseconds(1500)); // Wait for wall detection to update
+        rclcpp::sleep_for(std::chrono::milliseconds(1500));
 
-        // Wait for wall data to be received
         int wait_count = 0;
         while (!wall_received_ && rclcpp::ok() && wait_count < 30) {
             rclcpp::sleep_for(std::chrono::milliseconds(100));
@@ -98,7 +96,6 @@ public:
             return;
         }
 
-        // Use wall_corners_ to get top points and min_z
         if (wall_corners_.size() < 12) {
             RCLCPP_ERROR(this->get_logger(), "Wall data received but not enough corners (need 4).");
             moveToHome();
@@ -112,7 +109,6 @@ public:
         top2.y = wall_corners_[4];
         top2.z = wall_corners_[5];
 
-        // Find min_z among all 4 corners
         double min_z = wall_corners_[2];
         for (size_t i = 2; i < wall_corners_.size(); i += 3) {
             if (wall_corners_[i] < min_z) min_z = wall_corners_[i];
@@ -200,6 +196,11 @@ public:
 
             horizontal_step_ = painting_config["horizontal_step"].as<double>();
             force_threshold_ = painting_config["force_threshold"].as<double>();
+            if (painting_config["num_refuels"]) {
+                num_refuels_ = painting_config["num_refuels"].as<int>();
+            } else {
+                num_refuels_ = 0;
+            }
 
             if (!config["motion"]) {
                 RCLCPP_ERROR(this->get_logger(), "Missing 'motion' section in config file");
@@ -223,6 +224,26 @@ public:
             } else {
                 tool_size_ = 0.05;
             }
+
+            if (!config["home_position"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing 'home_position' section in config file");
+                rclcpp::shutdown();
+                exit(EXIT_FAILURE);
+            }
+            auto home_config = config["home_position"];
+            if (!home_config["x"] || !home_config["y"] || !home_config["z"] ||
+                !home_config["roll"] || !home_config["pitch"] || !home_config["yaw"]) {
+                RCLCPP_ERROR(this->get_logger(), "Missing required home_position parameters (x, y, z, roll, pitch, yaw)");
+                rclcpp::shutdown();
+                exit(EXIT_FAILURE);
+            }
+            home_x_ = home_config["x"].as<double>();
+            home_y_ = home_config["y"].as<double>();
+            home_z_ = home_config["z"].as<double>();
+            home_roll_ = home_config["roll"].as<double>();
+            home_pitch_ = home_config["pitch"].as<double>();
+            home_yaw_ = home_config["yaw"].as<double>();
+
         } catch (const YAML::Exception& e) {
             RCLCPP_ERROR(this->get_logger(), "YAML parsing error: %s", e.what());
             rclcpp::shutdown();
@@ -305,6 +326,14 @@ public:
 
         bool direction_down = true;
 
+        std::vector<int> refuel_columns;
+        if (num_refuels_ > 0 && num_columns > 0) {
+            for (int r = 1; r <= num_refuels_; ++r) {
+                int col = static_cast<int>(std::round(r * num_columns / double(num_refuels_ + 1)));
+                refuel_columns.push_back(col);
+            }
+        }
+
         for (int col = 0; col <= num_columns; col++) {
             if (shutdown_requested_ || !rclcpp::ok()) {
                 RCLCPP_INFO(this->get_logger(), "Shutdown requested, stopping painting.");
@@ -343,6 +372,10 @@ public:
 
             direction_down = !direction_down;
 
+            if (std::find(refuel_columns.begin(), refuel_columns.end(), col) != refuel_columns.end()) {
+                performRefuel();
+            }
+
             if (shutdown_requested_ || !rclcpp::ok()) {
                 RCLCPP_INFO(this->get_logger(), "Shutdown requested, stopping painting.");
                 progress_bar.finish();
@@ -354,6 +387,60 @@ public:
         RCLCPP_INFO(this->get_logger(), "Wall painting completed!");
         moveToHome();
         rclcpp::shutdown();
+    }
+
+    void performRefuel() {
+        moveToHome();
+        geometry_msgs::msg::PoseStamped home_pose = move_group_->getCurrentPose();
+        geometry_msgs::msg::Pose down_pose = home_pose.pose;
+        down_pose.position.z -= 0.10;
+
+        std::vector<geometry_msgs::msg::Pose> waypoints;
+        waypoints.push_back(home_pose.pose);
+        waypoints.push_back(down_pose);
+
+        move_group_->setMaxVelocityScalingFactor(0.1);
+        move_group_->setMaxAccelerationScalingFactor(0.1);
+        move_group_->setPlanningTime(1.0);
+
+        moveit_msgs::msg::RobotTrajectory trajectory;
+        const double eef_step = 0.005;
+        const double jump_threshold = 0.0;
+
+        double fraction = move_group_->computeCartesianPath(
+            waypoints, eef_step, jump_threshold, trajectory);
+
+        if (fraction > 0.95) {
+            move_group_->execute(trajectory);
+        }
+
+        waypoints.clear();
+        waypoints.push_back(down_pose);
+        waypoints.push_back(home_pose.pose);
+        fraction = move_group_->computeCartesianPath(
+            waypoints, eef_step, jump_threshold, trajectory);
+        if (fraction > 0.95) {
+            move_group_->execute(trajectory);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        waypoints.clear();
+        waypoints.push_back(home_pose.pose);
+        waypoints.push_back(down_pose);
+        fraction = move_group_->computeCartesianPath(
+            waypoints, eef_step, jump_threshold, trajectory);
+        if (fraction > 0.95) {
+            move_group_->execute(trajectory);
+        }
+
+        waypoints.clear();
+        waypoints.push_back(down_pose);
+        waypoints.push_back(home_pose.pose);
+        fraction = move_group_->computeCartesianPath(
+            waypoints, eef_step, jump_threshold, trajectory);
+        if (fraction > 0.95) {
+            move_group_->execute(trajectory);
+        }
     }
 
     bool approachWallUntilContact(const geometry_msgs::msg::Point& start_point, geometry_msgs::msg::Point& contact_point) {
@@ -381,16 +468,17 @@ public:
         }
 
         RCLCPP_ERROR(this->get_logger(), "Could not establish wall contact after %d steps", max_approach_steps_);
+        rclcpp::shutdown();
         return false;
     }
 
     void moveToHome() {
         geometry_msgs::msg::Pose home_pose;
-        home_pose.position.x = 0.00;
-        home_pose.position.y = 0.33;
-        home_pose.position.z = 0.40;
+        home_pose.position.x = home_x_;
+        home_pose.position.y = home_y_;
+        home_pose.position.z = home_z_;
         tf2::Quaternion q;
-        q.setRPY(M_PI, 0, 0.0);
+        q.setRPY(home_roll_, home_pitch_, home_yaw_);
         home_pose.orientation = tf2::toMsg(q);
 
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
@@ -466,17 +554,21 @@ private:
     int max_approach_steps_;
     double velocity_scale_;
     double force_threshold_;
-    double tool_size_; // Add this member
+    double tool_size_;
     int wall_direction_;
     bool approach_in_x_;
     double approach_distance_x_;
     double approach_distance_y_;
+    int num_refuels_;
 
     bool shutdown_requested_;
 
     std::vector<float> wall_corners_;
     std::mutex wall_mutex_;
     std::atomic<bool> wall_received_;
+
+    double home_x_, home_y_, home_z_;
+    double home_roll_, home_pitch_, home_yaw_;
 
     static int sgn(double val) {
         return (val > 0) - (val < 0);
@@ -491,7 +583,6 @@ int main(int argc, char ** argv) {
 
     node->run();
 
-    // Ensure cleanup is called before shutdown to join spinner thread
     node->cleanup();
 
     rclcpp::shutdown();

@@ -2,7 +2,7 @@
 motion:
   approach_step: 0.0035    # Step size for initial wall approach (meters)
   max_approach_steps: 100  # Number of steps allowed for wall approach
-  velocity_scale: 0.15     # Velocity scaling for movement
+  velocity_scale: 0.20     # Velocity scaling for movement
   tool_size: 0.0           # Size of the tool (meters)
   
 # Painting Parameters
@@ -18,3 +18,13 @@ painting:
   scale_xy: 0.94           # Scale factor for x/y toward robot base (default: 0.94)
   add_x: 0.0               # Offset for x after scaling (default: 0.0)
   add_y: -0.135            # Offset for y after scaling (default: -0.135)
+  num_refuels: 4           # Number of refueling pauses (uniformly distributed after vertical segments)
+
+# Home Position Parameters
+home_position:
+  x: 0.00
+  y: 0.33
+  z: 0.40
+  roll: 3.14   
+  pitch: 0.0
+  yaw: 0.0
