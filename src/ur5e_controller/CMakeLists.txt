@@ -29,6 +29,8 @@ find_package(visualization_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
+# Try to find nlohmann_json
+find_package(nlohmann_json QUIET)
 
 add_executable(robot_mover src/robot_mover.cpp)
 ament_target_dependencies(
@@ -41,7 +43,16 @@ ament_target_dependencies(
   std_srvs
   ur_msgs
   ur_dashboard_msgs
+  ament_index_cpp
 )
+
+# If nlohmann_json was found, link against it and define a preprocessor flag
+if(nlohmann_json_FOUND)
+  target_compile_definitions(robot_mover PRIVATE HAVE_NLOHMANN_JSON)
+  target_link_libraries(robot_mover nlohmann_json::nlohmann_json)
+else()
+  message(WARNING "nlohmann_json package not found. Using built-in JSON implementation.")
+endif()
 
 add_executable(wall_detector src/wall_detector.cpp)
 ament_target_dependencies(
