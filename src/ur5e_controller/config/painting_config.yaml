@@ -2,7 +2,7 @@
 motion:
   approach_step: 0.0025     # Step size for initial wall approach (meters)
   max_approach_steps: 100   # Number of steps allowed for wall approach
-  velocity_scale: 0.20      # Velocity scaling for movement
+  velocity_scale: 0.30      # Velocity scaling for movement
   tool_size: 0.16           # Size of the tool (meters)
   
 # Painting Parameters
@@ -11,14 +11,14 @@ painting:
   max_x: 0.55              # Maximum x value (meters)
   min_y: -0.55             # Minimum y value (meters)
   max_y: 0.55              # Maximum y value (meters)
-  min_z: 0.40              # Minimum z value (meters)
+  min_z: 0.35              # Minimum z value (meters)
   max_z: 0.75              # Maximum z value (meters)
-  horizontal_step: 0.025   # Horizontal step between columns (meters)
-  force_threshold: 9.0     # Threshold for detecting wall contact (Newtons)
-  scale_xy: 0.94           # Scale factor for x/y toward robot base (default: 0.94)
+  horizontal_step: 0.020   # Horizontal step between columns (meters)
+  force_threshold: 7.5     # Threshold for detecting wall contact (Newtons)
+  scale_xy: 0.93           # Scale factor for x/y toward robot base (default: 0.94)
   add_x: 0.0               # Offset for x after scaling (default: 0.0)
   add_y: -0.135            # Offset for y after scaling (default: -0.135)
-  num_refuels: 5           # Number of refueling pauses (uniformly distributed after vertical segments)
+  num_refuels: 0           # Number of refueling pauses (uniformly distributed after vertical segments)
   painting_orientation_roll: 3.14     # Roll for painting orientation (rad)
   painting_orientation_pitch: 1.57    # Pitch for painting orientation (rad)
   painting_orientation_yaw: 0.0      # Yaw for painting orientation (rad)
