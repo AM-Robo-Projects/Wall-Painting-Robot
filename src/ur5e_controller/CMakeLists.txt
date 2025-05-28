@@ -17,6 +17,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)  # Add tf2_eigen
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(ur_msgs REQUIRED)
@@ -36,6 +37,7 @@ ament_target_dependencies(
   moveit_ros_planning_interface
   geometry_msgs
   tf2_geometry_msgs
+  tf2_eigen  # Add tf2_eigen dependency
   std_srvs
   ur_msgs
   ur_dashboard_msgs

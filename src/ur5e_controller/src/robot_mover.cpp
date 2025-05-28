@@ -12,6 +12,8 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include <Eigen/Geometry>
+#include <tf2_eigen/tf2_eigen.h>
 
 using namespace std::chrono_literals;
 
@@ -215,70 +217,94 @@ public:
       if (read(STDIN_FILENO, &key, 1) < 0) {
         continue;
       }
-      geometry_msgs::msg::Pose target_pose = current_pose_;
+      
       bool move_requested = false;
-      bool orientation_changed = false;
+      
+      // Convert current pose to Eigen for TCP-relative manipulations
+      Eigen::Isometry3d current_pose_eigen;
+      tf2::fromMsg(current_pose_, current_pose_eigen);
+      
       switch (key) {
         case 'w': case 'W':
-          target_pose.position.x += linear_step_size_;
+          // Move in +X direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(linear_step_size_, 0, 0);
           move_requested = true;
-          std::cout << "Moving +X: " << linear_step_size_ << "m\n";
+          std::cout << "Moving +X (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 's': case 'S':
-          target_pose.position.x -= linear_step_size_;
+          // Move in -X direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(-linear_step_size_, 0, 0);
           move_requested = true;
-          std::cout << "Moving -X: " << linear_step_size_ << "m\n";
+          std::cout << "Moving -X (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'd': case 'D':
-          target_pose.position.y += linear_step_size_;
+          // Move in +Y direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, linear_step_size_, 0);
           move_requested = true;
-          std::cout << "Moving +Y: " << linear_step_size_ << "m\n";
+          std::cout << "Moving +Y (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'a': case 'A':
-          target_pose.position.y -= linear_step_size_;
+          // Move in -Y direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, -linear_step_size_, 0);
           move_requested = true;
-          std::cout << "Moving -Y: " << linear_step_size_ << "m\n";
+          std::cout << "Moving -Y (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'q': case 'Q':
-          target_pose.position.z += linear_step_size_;
+          // Move in +Z direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, 0, linear_step_size_);
           move_requested = true;
-          std::cout << "Moving +Z: " << linear_step_size_ << "m\n";
+          std::cout << "Moving +Z (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'e': case 'E':
-          target_pose.position.z -= linear_step_size_;
+          // Move in -Z direction in tool frame
+          current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, 0, -linear_step_size_);
           move_requested = true;
-          std::cout << "Moving -Z: " << linear_step_size_ << "m\n";
+          std::cout << "Moving -Z (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'u': case 'U':
-          current_roll_ += angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Increasing roll: " << current_roll_ << " rad\n";
+          // Rotate around tool X-axis (roll)
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitX());
+          move_requested = true;
+          std::cout << "Rotating around tool X-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'o': case 'O':
-          current_roll_ -= angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Decreasing roll: " << current_roll_ << " rad\n";
+          // Rotate around tool X-axis (roll) negative
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitX());
+          move_requested = true;
+          std::cout << "Rotating around tool X-axis: " << -angular_step_size_ << " rad\n";
           break;
         case 'i': case 'I':
-          current_pitch_ += angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Increasing pitch: " << current_pitch_ << " rad\n";
+          // Rotate around tool Y-axis (pitch)
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitY());
+          move_requested = true;
+          std::cout << "Rotating around tool Y-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'k': case 'K':
-          current_pitch_ -= angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Decreasing pitch: " << current_pitch_ << " rad\n";
+          // Rotate around tool Y-axis (pitch) negative
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitY());
+          move_requested = true;
+          std::cout << "Rotating around tool Y-axis: " << -angular_step_size_ << " rad\n";
           break;
         case 'j': case 'J':
-          current_yaw_ += angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Increasing yaw: " << current_yaw_ << " rad\n";
+          // Rotate around tool Z-axis (yaw)
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitZ());
+          move_requested = true;
+          std::cout << "Rotating around tool Z-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'l': case 'L':
-          current_yaw_ -= angular_step_size_;
-          orientation_changed = true;
-          std::cout << "Decreasing yaw: " << current_yaw_ << " rad\n";
+          // Rotate around tool Z-axis (yaw) negative
+          current_pose_eigen = current_pose_eigen * 
+                              Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitZ());
+          move_requested = true;
+          std::cout << "Rotating around tool Z-axis: " << -angular_step_size_ << " rad\n";
           break;
+        
+        // Keep all other commands the same
         case 'f': case 'F':
           if (force_feedback_enabled_) {
             std::cout << "Disabling force feedback before orientation adjustment..." << std::endl;
@@ -370,26 +396,28 @@ public:
         default:
           break;
       }
-      if (orientation_changed || move_requested) {
+      
+      if (move_requested) {
         if (force_feedback_enabled_) {
           std::cout << "Disabling force feedback before movement..." << std::endl;
           toggleForceFeedback();
         }
-      }
-      if (orientation_changed) {
+        
+        // Convert Eigen transformation back to geometry_msgs::Pose
+        geometry_msgs::msg::Pose target_pose = tf2::toMsg(current_pose_eigen);
+        
+        // Update current orientation values for display
         tf2::Quaternion q;
-        q.setRPY(current_roll_, current_pitch_, current_yaw_);
-        target_pose.orientation = tf2::toMsg(q);
-        move_requested = true;
-      }
-      if (move_requested) {
+        tf2::fromMsg(target_pose.orientation, q);
+        tf2::Matrix3x3(q).getRPY(current_roll_, current_pitch_, current_yaw_);
+        
         moveToPosition(target_pose);
         printInstructions();
       } else if (key == 'f' || key == 'F' || key == 'r' || key == 'R' || 
-                 key == '1' || key == '2' || key == '3' || key == '4' ||
-                 key == 'm' || key == 'M' || key == 'n' || key == 'N' ||
-                 key == 'b' || key == 'B' || key == 'v' || key == 'V' ||
-                 key == 't' || key == 'T') {
+                key == '1' || key == '2' || key == '3' || key == '4' ||
+                key == 'm' || key == 'M' || key == 'n' || key == 'N' ||
+                key == 'b' || key == 'B' || key == 'v' || key == 'V' ||
+                key == 't' || key == 'T') {
         printInstructions();
       }
     }
