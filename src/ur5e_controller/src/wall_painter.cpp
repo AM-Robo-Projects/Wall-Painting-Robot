@@ -573,8 +573,8 @@ private:
         std::vector<geometry_msgs::msg::Point> scaled_top_points = scale_points(top_contact_points_);
         std::vector<geometry_msgs::msg::Point> scaled_bottom_points = scale_points(bottom_contact_points_);
 
-        std::vector<geometry_msgs::msg::Point> simplified_top_points = simplifyPoints(scaled_top_points, 5);
-        std::vector<geometry_msgs::msg::Point> simplified_bottom_points = simplifyPoints(scaled_bottom_points, 5);
+        std::vector<geometry_msgs::msg::Point> simplified_top_points = simplifyPoints(scaled_top_points, 3);
+        std::vector<geometry_msgs::msg::Point> simplified_bottom_points = simplifyPoints(scaled_bottom_points, 3);
 
         RCLCPP_INFO(this->get_logger(), "Starting rounding pass with simplified waypoints (%zu top, %zu bottom)...",
                     simplified_top_points.size(), simplified_bottom_points.size());
@@ -613,7 +613,7 @@ private:
             q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
             pose.orientation = tf2::toMsg(q);
             // Apply 90 degree rotation for horizontal movement
-            pose.position.z *= 1.02;
+            pose.position.z *= 1.015;
             waypoints.push_back(rotateZ90Degrees(pose));
         }
 

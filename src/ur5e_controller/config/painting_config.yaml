@@ -12,7 +12,7 @@ painting:
   min_y: -0.55             # Minimum y value (meters)
   max_y: 0.55              # Maximum y value (meters)
   min_z: 0.35              # Minimum z value (meters)
-  max_z: 0.75              # Maximum z value (meters)
+  max_z: 0.78              # Maximum z value (meters)
   horizontal_step: 0.020   # Horizontal step between columns (meters)
   force_threshold: 7.5     # Threshold for detecting wall contact (Newtons)
   scale_xy: 0.93           # Scale factor for x/y toward robot base (default: 0.94)
