@@ -10,229 +10,7 @@
 #include <vector>
 #include <sstream>
 
-// Use the nlohmann/json library if available, otherwise use our own simple implementation
-#ifdef HAVE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
-#else
-// Simple JSON writing/parsing implementation for our specific needs
-// This is a minimal implementation that only supports what we need
-namespace simple_json {
-  class value {
-  public:
-    enum type { null_type, object_type, array_type, string_type, number_type, boolean_type };
-    
-    value() : type_(null_type) {}
-    value(const std::string& s) : type_(string_type), string_value_(s) {}
-    value(double n) : type_(number_type), number_value_(n) {}
-    value(bool b) : type_(boolean_type), bool_value_(b) {}
-    
-    value& operator[](const std::string& key) {
-      type_ = object_type;
-      return object_values_[key];
-    }
-    
-    value& operator[](size_t index) {
-      type_ = array_type;
-      while (array_values_.size() <= index) {
-        array_values_.push_back(value());
-      }
-      return array_values_[index];
-    }
-    
-    void push_back(const value& v) {
-      type_ = array_type;
-      array_values_.push_back(v);
-    }
-    
-    bool is_null() const { return type_ == null_type; }
-    bool is_object() const { return type_ == object_type; }
-    bool is_array() const { return type_ == array_type; }
-    
-    std::string dump(int indent = 0) const {
-      std::stringstream ss;
-      write(ss, indent, 0);
-      return ss.str();
-    }
-    
-    static value array() {
-      value v;
-      v.type_ = array_type;
-      return v;
-    }
-    
-    static value parse(std::istream& is) {
-      value result;
-      is >> std::ws;
-      char c;
-      is.get(c);
-      
-      if (c == '{') {  // Object
-        result.type_ = object_type;
-        is >> std::ws;
-        if (is.peek() != '}') {
-          while (true) {
-            // Read key
-            is >> std::ws;
-            if (is.peek() != '"') throw std::runtime_error("Expected '\"' for object key");
-            is.get(); // Skip opening quote
-            std::string key;
-            std::getline(is, key, '"');
-            
-            // Read colon
-            is >> std::ws;
-            if (is.peek() != ':') throw std::runtime_error("Expected ':' after object key");
-            is.get(); // Skip colon
-            
-            // Read value
-            result.object_values_[key] = parse(is);
-            
-            // Check if there are more entries
-            is >> std::ws;
-            c = is.get();
-            if (c == '}') break;
-            if (c != ',') throw std::runtime_error("Expected ',' or '}' after object entry");
-          }
-        } else {
-          is.get(); // Skip closing brace
-        }
-      } else if (c == '[') {  // Array
-        result.type_ = array_type;
-        is >> std::ws;
-        if (is.peek() != ']') {
-          while (true) {
-            result.array_values_.push_back(parse(is));
-            
-            // Check if there are more entries
-            is >> std::ws;
-            c = is.get();
-            if (c == ']') break;
-            if (c != ',') throw std::runtime_error("Expected ',' or ']' after array element");
-          }
-        } else {
-          is.get(); // Skip closing bracket
-        }
-      } else if (c == '"') {  // String
-        result.type_ = string_type;
-        std::getline(is, result.string_value_, '"');
-      } else if (isdigit(c) || c == '-') {  // Number
-        is.unget();
-        result.type_ = number_type;
-        is >> result.number_value_;
-      } else if (c == 't' || c == 'f') {  // Boolean
-        is.unget();
-        std::string val;
-        if (c == 't') {
-          val.resize(4);
-          is.read(&val[0], 4);
-          if (val != "true") throw std::runtime_error("Expected 'true' for boolean value");
-          result.type_ = boolean_type;
-          result.bool_value_ = true;
-        } else {
-          val.resize(5);
-          is.read(&val[0], 5);
-          if (val != "false") throw std::runtime_error("Expected 'false' for boolean value");
-          result.type_ = boolean_type;
-          result.bool_value_ = false;
-        }
-      } else {
-        throw std::runtime_error(std::string("Unexpected character in JSON: ") + c);
-      }
-      
-      return result;
-    }
-    
-    operator std::string() const {
-      if (type_ != string_type) throw std::runtime_error("Not a string");
-      return string_value_;
-    }
-    
-    operator double() const {
-      if (type_ != number_type) throw std::runtime_error("Not a number");
-      return number_value_;
-    }
-    
-    size_t size() const {
-      if (type_ != array_type) throw std::runtime_error("Not an array");
-      return array_values_.size();
-    }
-    
-  private:
-    void write(std::ostream& os, int indent = 0, int level = 0) const {
-      std::string spaces(level * indent, ' ');
-      switch (type_) {
-        case null_type:
-          os << "null";
-          break;
-        case object_type:
-          if (object_values_.empty()) {
-            os << "{}";
-          } else {
-            os << "{";
-            if (indent > 0) os << "\n";
-            bool first = true;
-            for (const auto& kv : object_values_) {
-              if (!first) {
-                os << ",";
-                if (indent > 0) os << "\n";
-              }
-              first = false;
-              if (indent > 0) os << spaces << std::string(indent, ' ');
-              os << "\"" << kv.first << "\": ";
-              kv.second.write(os, indent, level + 1);
-            }
-            if (indent > 0) os << "\n" << spaces;
-            os << "}";
-          }
-          break;
-        case array_type:
-          if (array_values_.empty()) {
-            os << "[]";
-          } else {
-            os << "[";
-            if (indent > 0) os << "\n";
-            bool first = true;
-            for (const auto& v : array_values_) {
-              if (!first) {
-                os << ",";
-                if (indent > 0) os << "\n";
-              }
-              first = false;
-              if (indent > 0) os << spaces << std::string(indent, ' ');
-              v.write(os, indent, level + 1);
-            }
-            if (indent > 0) os << "\n" << spaces;
-            os << "]";
-          }
-          break;
-        case string_type:
-          os << "\"" << string_value_ << "\"";
-          break;
-        case number_type:
-          os << std::fixed << std::setprecision(10) << number_value_;
-          break;
-        case boolean_type:
-          os << (bool_value_ ? "true" : "false");
-          break;
-      }
-    }
-    
-    type type_;
-    std::string string_value_;
-    double number_value_ = 0.0;
-    bool bool_value_ = false;
-    std::map<std::string, value> object_values_;
-    std::vector<value> array_values_;
-  };
-}  // namespace simple_json
-
-// Define an alias for the JSON implementation we're using
-#define JSON_NS simple_json
-#endif
-
-#ifndef JSON_NS
-// If we have the nlohmann library
-#define JSON_NS nlohmann
-#endif
 
 #include "rclcpp/rclcpp.hpp"
 #include "moveit/move_group_interface/move_group_interface.h"
@@ -732,33 +510,121 @@ private:
 
   void createSavePointDirectory() {
     try {
-      // Use ROS 2 package discovery system to find the package directory
-      std::string package_name = "ur5e_controller";
-      std::string package_share_directory = ament_index_cpp::get_package_share_directory(package_name);
+      // Get the package share directory through ROS API
+      std::string package_share_directory = ament_index_cpp::get_package_share_directory("ur5e_controller");
       
-      // Create the saved_points directory within the package directory
+      // Create the dedicated saved_points directory at the same level as config
       save_points_dir_ = fs::path(package_share_directory) / "saved_points";
       
       RCLCPP_INFO(get_logger(), "Using directory for saved points: %s", 
                   save_points_dir_.string().c_str());
       
-      // Create the directory if it doesn't exist
+      // Ensure the directory exists in install location
       if (!fs::exists(save_points_dir_)) {
         fs::create_directories(save_points_dir_);
         RCLCPP_INFO(get_logger(), "Created directory for saved points: %s", 
                     save_points_dir_.string().c_str());
       }
 
+      // Use the compile-time defined source directory path
+#ifdef SAVED_POINTS_SOURCE_DIR
+      fs::path src_save_points_dir = SAVED_POINTS_SOURCE_DIR;
+      bool src_dir_found = true;
+      RCLCPP_INFO(get_logger(), "Using compile-time source directory: %s", 
+                src_save_points_dir.string().c_str());
+#else
+      // Fallback to dynamic detection if compile-time path not available
+      fs::path src_save_points_dir;
+      bool src_dir_found = false;
+      
+      // Try to find the source directory using environment variables
+      char* ros_workspace = std::getenv("ROS_WORKSPACE");
+      
+      if (ros_workspace) {
+        // Use ROS_WORKSPACE environment variable if available
+        src_save_points_dir = fs::path(ros_workspace) / "src" / "ur5e_controller" / "saved_points";
+        if (fs::exists(src_save_points_dir.parent_path())) {
+          src_dir_found = true;
+          RCLCPP_INFO(get_logger(), "Found source directory using ROS_WORKSPACE: %s", 
+                    src_save_points_dir.string().c_str());
+        }
+      }
+      
+      // Try absolute path from PROJECT_SOURCE_DIR if defined
+#ifdef PROJECT_SOURCE_DIR
+      if (!src_dir_found) {
+        src_save_points_dir = fs::path(PROJECT_SOURCE_DIR) / "saved_points";
+        if (fs::exists(src_save_points_dir.parent_path())) {
+          src_dir_found = true;
+          RCLCPP_INFO(get_logger(), "Found source directory using PROJECT_SOURCE_DIR: %s", 
+                    src_save_points_dir.string().c_str());
+        }
+      }
+#endif
+
+      // Additional fallback methods if still not found
+      if (!src_dir_found) {
+        // Try to find the source directory by navigating up from the binary
+        fs::path binary_path = fs::canonical("/proc/self/exe");
+        
+        // Try common directory structures for ROS workspaces
+        std::vector<std::string> possible_paths = {
+          "src/ur5e_controller/saved_points",
+          "../src/ur5e_controller/saved_points",
+          "../../src/ur5e_controller/saved_points",
+          "../../../src/ur5e_controller/saved_points",
+          "../../../../src/ur5e_controller/saved_points"
+        };
+        
+        for (const auto& rel_path : possible_paths) {
+          fs::path candidate = binary_path.parent_path() / rel_path;
+          if (fs::exists(candidate.parent_path())) {
+            src_save_points_dir = candidate;
+            src_dir_found = true;
+            RCLCPP_INFO(get_logger(), "Found source directory by path traversal: %s", 
+                      src_save_points_dir.string().c_str());
+            break;
+          }
+        }
+      }
+#endif
+
+      // Create source directory if found
+      if (src_dir_found && !fs::exists(src_save_points_dir)) {
+        try {
+          fs::create_directories(src_save_points_dir);
+          RCLCPP_INFO(get_logger(), "Created source directory for saved points: %s", 
+                      src_save_points_dir.string().c_str());
+          source_points_dir_ = src_save_points_dir; // Store for later use
+        } catch (const std::exception& e) {
+          RCLCPP_WARN(get_logger(), "Could not create source directory: %s, Error: %s", 
+                    src_save_points_dir.string().c_str(), e.what());
+          src_dir_found = false;
+        }
+      } else if (src_dir_found) {
+        source_points_dir_ = src_save_points_dir; // Store for later use
+      }
+
       // Define the JSON file path
       points_file_path_ = save_points_dir_ / "saved_points.json";
       
+      // If the file doesn't exist in the install dir but exists in the source dir, copy it
+      if (src_dir_found) {
+        fs::path src_points_file = source_points_dir_ / "saved_points.json";
+        if (!fs::exists(points_file_path_) && fs::exists(src_points_file)) {
+          try {
+            fs::copy_file(src_points_file, points_file_path_);
+            RCLCPP_INFO(get_logger(), "Copied saved points file from source: %s to: %s", 
+                      src_points_file.string().c_str(), points_file_path_.string().c_str());
+          } catch (const std::exception& e) {
+            RCLCPP_WARN(get_logger(), "Could not copy from source: %s", e.what());
+          }
+        }
+      }
+      
       // Initialize empty JSON file if it doesn't exist
       if (!fs::exists(points_file_path_)) {
-        #ifdef HAVE_NLOHMANN_JSON
         nlohmann::json empty_points = nlohmann::json::array();
-        #else
-        JSON_NS::value empty_points = JSON_NS::value::array();
-        #endif
         
         std::ofstream file(points_file_path_);
         if (file.is_open()) {
@@ -766,6 +632,24 @@ private:
           file.close();
           RCLCPP_INFO(get_logger(), "Created empty saved points file: %s", 
                       points_file_path_.string().c_str());
+          
+          // Also create a copy in the source tree if available
+          if (src_dir_found) {
+            fs::path src_points_file = source_points_dir_ / "saved_points.json";
+            if (!fs::exists(src_points_file)) {
+              try {
+                std::ofstream src_file(src_points_file);
+                if (src_file.is_open()) {
+                  src_file << empty_points.dump(2);
+                  src_file.close();
+                  RCLCPP_INFO(get_logger(), "Mirrored empty saved points file to source: %s", 
+                            src_points_file.string().c_str());
+                }
+              } catch (const std::exception& e) {
+                RCLCPP_WARN(get_logger(), "Could not write to source file: %s", e.what());
+              }
+            }
+          }
         } else {
           RCLCPP_ERROR(get_logger(), "Failed to create saved points file: %s", 
                        points_file_path_.string().c_str());
@@ -778,68 +662,13 @@ private:
     }
   }
 
-  void saveCurrentPoint() {
-    restoreTerminal();
-    std::cout << "\nEnter name for this position: ";
-    std::string point_name;
-    std::getline(std::cin, point_name);
-    
-    if (point_name.empty()) {
-      std::cout << "Save cancelled - empty name provided.\n";
-      configureTerminal();
-      return;
-    }
-    
-    // Check if name already exists
-    for (auto& pt : saved_points_) {
-      if (pt.name == point_name) {
-        std::cout << "A point with this name already exists. Overwrite? (y/n): ";
-        char choice;
-        std::cin >> choice;
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        if (choice != 'y' && choice != 'Y') {
-          std::cout << "Save cancelled.\n";
-          configureTerminal();
-          return;
-        }
-        // Remove the existing point
-        auto it = std::find_if(saved_points_.begin(), saved_points_.end(),
-                         [&point_name](const SavedPoint& p) { return p.name == point_name; });
-        if (it != saved_points_.end()) {
-          saved_points_.erase(it);
-        }
-        break;
-      }
-    }
-    
-    SavedPoint new_point;
-    new_point.name = point_name;
-    new_point.pose = current_pose_;
-    new_point.joint_values = current_joint_values_;
-    saved_points_.push_back(new_point);
-    
-    // Save to JSON file
-    savePointsToJsonFile();
-    
-    std::cout << "Position saved as '" << point_name << "'.\n";
-    configureTerminal();
-  }
-
   void savePointsToJsonFile() {
-    #ifdef HAVE_NLOHMANN_JSON
     nlohmann::json points_array = nlohmann::json::array();
-    #else
-    JSON_NS::value points_array = JSON_NS::value::array();
-    #endif
   
     for (size_t i = 0; i < saved_points_.size(); i++) {
       const auto& point = saved_points_[i];
       
-      #ifdef HAVE_NLOHMANN_JSON
       nlohmann::json point_json;
-      #else
-      JSON_NS::value point_json;
-      #endif
     
       point_json["name"] = point.name;
       point_json["pose"]["position"]["x"] = point.pose.position.x;
@@ -850,33 +679,83 @@ private:
       point_json["pose"]["orientation"]["z"] = point.pose.orientation.z;
       point_json["pose"]["orientation"]["w"] = point.pose.orientation.w;
     
-      #ifdef HAVE_NLOHMANN_JSON
       nlohmann::json joint_values_array = nlohmann::json::array();
-      #else
-      JSON_NS::value joint_values_array = JSON_NS::value::array();
-      #endif
     
       for (size_t j = 0; j < point.joint_values.size(); j++) {
         joint_values_array.push_back(point.joint_values[j]);
       }
       point_json["joint_values"] = joint_values_array;
     
-      #ifdef HAVE_NLOHMANN_JSON
       points_array.push_back(point_json);
-      #else
-      points_array.push_back(point_json);
-      #endif
     }
     
+    std::string json_content = points_array.dump(2);
+    
+    // Save to the install directory location
     std::ofstream file(points_file_path_);
     if (file.is_open()) {
-      file << points_array.dump(2); // Pretty print with 2-space indent
+      file << json_content;
       file.close();
       RCLCPP_INFO(get_logger(), "Saved %zu points to JSON file: %s", 
                   saved_points_.size(), points_file_path_.string().c_str());
     } else {
       RCLCPP_ERROR(get_logger(), "Failed to save points to JSON file: %s", 
                    points_file_path_.string().c_str());
+    }
+    
+    // Always try to save to source directory too (even if not found before)
+    // This provides additional opportunity to find the source dir
+    if (!source_points_dir_.empty()) {
+      fs::path src_points_file = source_points_dir_ / "saved_points.json";
+      try {
+        // Make sure parent directory exists
+        if (!fs::exists(source_points_dir_)) {
+          fs::create_directories(source_points_dir_);
+        }
+        
+        std::ofstream src_file(src_points_file);
+        if (src_file.is_open()) {
+          src_file << json_content;
+          src_file.close();
+          RCLCPP_INFO(get_logger(), "Successfully saved points to source directory: %s",
+                    src_points_file.string().c_str());
+        }
+      } catch (const std::exception& e) {
+        RCLCPP_WARN(get_logger(), "Could not save to source file: %s, Error: %s", 
+                    src_points_file.string().c_str(), e.what());
+      }
+    } else {
+      RCLCPP_WARN(get_logger(), "Source directory not found, points saved only to install directory");
+      
+      // Try hardcoded common locations as a last resort
+      std::vector<std::string> common_src_paths = {
+        "/home/irobot/Wall-Painting-Robot/src/ur5e_controller/saved_points",
+        "/home/irobot/ros2_ws/src/ur5e_controller/saved_points"
+      };
+      
+      for (const auto& path_str : common_src_paths) {
+        fs::path try_path(path_str);
+        try {
+          if (fs::exists(try_path.parent_path())) {
+            if (!fs::exists(try_path)) {
+              fs::create_directories(try_path);
+            }
+            
+            fs::path try_file = try_path / "saved_points.json";
+            std::ofstream try_src_file(try_file);
+            if (try_src_file.is_open()) {
+              try_src_file << json_content;
+              try_src_file.close();
+              RCLCPP_INFO(get_logger(), "Successfully saved points to potential source at: %s",
+                        try_file.string().c_str());
+              source_points_dir_ = try_path;  // Update the source dir for future saves
+              break;
+            }
+          }
+        } catch (const std::exception& e) {
+          // Just continue to the next path
+        }
+      }
     }
   }
 
@@ -897,7 +776,6 @@ private:
         return;
       }
       
-      #ifdef HAVE_NLOHMANN_JSON
       nlohmann::json points_array;
       try {
         file >> points_array;
@@ -905,22 +783,8 @@ private:
         RCLCPP_ERROR(get_logger(), "Error parsing JSON: %s", e.what());
         return;
       }
-      #else
-      JSON_NS::value points_array;
-      try {
-        points_array = JSON_NS::value::parse(file);
-      } catch (const std::exception& e) {
-        RCLCPP_ERROR(get_logger(), "Error parsing JSON: %s", e.what());
-        return;
-      }
-      #endif
     
-      #ifdef HAVE_NLOHMANN_JSON
       for (const auto& point_json : points_array) {
-      #else
-      for (size_t i = 0; i < points_array.size(); i++) {
-        auto& point_json = points_array[i];
-      #endif
         SavedPoint point;
         point.name = point_json["name"];
         
@@ -933,16 +797,9 @@ private:
         point.pose.orientation.z = point_json["pose"]["orientation"]["z"];
         point.pose.orientation.w = point_json["pose"]["orientation"]["w"];
         
-        #ifdef HAVE_NLOHMANN_JSON
         for (const auto& joint_value : point_json["joint_values"]) {
           point.joint_values.push_back(joint_value);
         }
-        #else
-        auto& joint_values = point_json["joint_values"];
-        for (size_t j = 0; j < joint_values.size(); j++) {
-          point.joint_values.push_back(double(joint_values[j]));
-        }
-        #endif
         
         saved_points_.push_back(point);
         RCLCPP_INFO(get_logger(), "Loaded saved point: %s", point.name.c_str());
@@ -1046,6 +903,53 @@ private:
     }
   }
 
+  void saveCurrentPoint() {
+    restoreTerminal();
+    std::cout << "\nEnter name for this position: ";
+    std::string point_name;
+    std::getline(std::cin, point_name);
+    
+    if (point_name.empty()) {
+      std::cout << "Save cancelled - empty name provided.\n";
+      configureTerminal();
+      return;
+    }
+    
+    // Check if name already exists
+    for (auto& pt : saved_points_) {
+      if (pt.name == point_name) {
+        std::cout << "A point with this name already exists. Overwrite? (y/n): ";
+        char choice;
+        std::cin >> choice;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        if (choice != 'y' && choice != 'Y') {
+          std::cout << "Save cancelled.\n";
+          configureTerminal();
+          return;
+        }
+        // Remove the existing point
+        auto it = std::find_if(saved_points_.begin(), saved_points_.end(),
+                         [&point_name](const SavedPoint& p) { return p.name == point_name; });
+        if (it != saved_points_.end()) {
+          saved_points_.erase(it);
+        }
+        break;
+      }
+    }
+    
+    SavedPoint new_point;
+    new_point.name = point_name;
+    new_point.pose = current_pose_;
+    new_point.joint_values = current_joint_values_;
+    saved_points_.push_back(new_point);
+    
+    // Save to JSON file
+    savePointsToJsonFile();
+    
+    std::cout << "Position saved as '" << point_name << "'.\n";
+    configureTerminal();
+  }
+
   std::shared_ptr<rclcpp::Node> move_group_node_;
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   rclcpp::executors::SingleThreadedExecutor executor_;
@@ -1064,7 +968,8 @@ private:
   double current_roll_, current_pitch_, current_yaw_;
   
   fs::path save_points_dir_;
-  fs::path points_file_path_;  // New: Path to the JSON file
+  fs::path points_file_path_;  // Path to the JSON file
+  fs::path source_points_dir_; // Path to the source code's saved points directory
   std::vector<SavedPoint> saved_points_;
 };
 

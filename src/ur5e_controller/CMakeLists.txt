@@ -17,7 +17,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_eigen REQUIRED)  # Add tf2_eigen
+find_package(tf2_eigen REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(ur_msgs REQUIRED)
@@ -28,31 +28,27 @@ find_package(pcl_conversions REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-# Try to find nlohmann_json
-find_package(nlohmann_json QUIET)
+get_filename_component(PROJECT_SOURCE_DIR_ABS "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 
 add_executable(robot_mover src/robot_mover.cpp)
+target_compile_definitions(robot_mover PRIVATE 
+  PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR_ABS}"
+  SAVED_POINTS_SOURCE_DIR="${PROJECT_SOURCE_DIR_ABS}/saved_points")
 ament_target_dependencies(
   robot_mover
   rclcpp
   moveit_ros_planning_interface
   geometry_msgs
   tf2_geometry_msgs
-  tf2_eigen  # Add tf2_eigen dependency
+  tf2_eigen
   std_srvs
   ur_msgs
   ur_dashboard_msgs
   ament_index_cpp
 )
-
-# If nlohmann_json was found, link against it and define a preprocessor flag
-if(nlohmann_json_FOUND)
-  target_compile_definitions(robot_mover PRIVATE HAVE_NLOHMANN_JSON)
-  target_link_libraries(robot_mover nlohmann_json::nlohmann_json)
-else()
-  message(WARNING "nlohmann_json package not found. Using built-in JSON implementation.")
-endif()
+target_link_libraries(robot_mover nlohmann_json::nlohmann_json)
 
 add_executable(wall_detector src/wall_detector.cpp)
 ament_target_dependencies(
@@ -103,8 +99,12 @@ install(DIRECTORY
 )
 
 install(DIRECTORY 
+  saved_points
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY 
   launch
-  config
   DESTINATION share/${PROJECT_NAME}/
 )
 
