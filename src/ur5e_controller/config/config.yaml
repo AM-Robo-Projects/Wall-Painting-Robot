@@ -1,0 +1,70 @@
+# Configuration File for Wall Painting Robot
+
+# LiDAR System Configuration
+lidar:
+  # Transform configuration between frames
+  transform:
+    x: -0.135
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 3.14
+    parent_frame: "base"
+    child_frame: "livox_frame"
+
+  converter:
+    buffer_duration: 1.5
+
+  wall_detection:
+    enable_crop_box_gui: false
+    # Crop box for wall detection
+    crop_min_x: -1.5
+    crop_max_x: 1.5
+    crop_min_y: -1.5
+    crop_max_y: 1.5
+    crop_min_z: 0.15
+    crop_max_z: 1.5
+    min_wall_size: 0.5
+    min_wall_points: 50  
+
+# Robot Motion Parameters
+robot:
+  motion:
+    approach_step_size: 0.0030     # Step size for initial wall approach (meters)
+    max_approach_steps: 150        # Maximum steps for wall approach
+    velocity_scale: 0.30           
+    tool_size: 0.32                # Size of the tool (meters)
+  
+  home_position:
+    x: 0.00
+    y: 0.33
+    z: 0.40
+    roll: 3.14
+    pitch: 0.0
+    yaw: 0.0
+
+# Painting Parameters
+painting:
+  workspace:
+    min_x: -0.0                    
+    max_x: 1.0                     
+    min_y: -0.40                   
+    max_y: 0.40                    
+    min_z: 0.25                    
+    max_z: 0.70                    
+  
+  process:
+    horizontal_step: 0.017         # Horizontal step between columns (meters)
+    force_threshold: 7.0           # Threshold for detecting wall contact (Newtons)
+    num_refuels: 4                 
+  
+  transform:
+    scale_xy: 0.925                # Scale factor for x/y toward robot base
+    offset_x: 0.0                  
+    offset_y: 0.0                  
+  
+  orientation:
+    roll: 3.14                     
+    pitch: -1.57                   
+    yaw: 0.0

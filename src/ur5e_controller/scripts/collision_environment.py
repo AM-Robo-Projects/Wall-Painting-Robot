@@ -42,14 +42,11 @@ class CollisionEnvironmentNode(Node):
         self.get_logger().info('Adding floor collision object')
         
         floor_id = 'floor'
-        # Adjusted dimensions to match the U-shape formed by the walls
-        # Width matches the back wall (1.3m) + some margin
-        # Length is the depth of the side walls (0.9m) + back wall thickness + margin
         dimensions = [1.5, 1.5, 0.05]
         
         pose = Pose()
         pose.position.x = 0.65
-        pose.position.y = 0.2  # Centered with the U-shape structure
+        pose.position.y = 0.2
         pose.position.z = -0.05
         pose.orientation.w = 1.0
         

@@ -34,11 +34,11 @@ public:
         try
         {
             auto pkg_share = ament_index_cpp::get_package_share_directory("ur5e_controller");
-            config_path = pkg_share + "/config/lidar_config.yaml";
+            config_path = pkg_share + "/config/config.yaml";
         }
         catch (...)
         {
-            config_path = std::string(std::getenv("HOME")) + "/Wall-Painting-Robot/src/ur5e_controller/config/lidar_config.yaml";
+            config_path = std::string(std::getenv("HOME")) + "/Wall-Painting-Robot/src/ur5e_controller/config/config.yaml";
             RCLCPP_WARN(this->get_logger(), "Could not find package share, using fallback config path: %s", config_path.c_str());
         }
 
@@ -50,7 +50,7 @@ public:
         catch (const std::exception &e)
         {
             RCLCPP_FATAL(this->get_logger(), "Failed to load config file: %s", e.what());
-            throw std::runtime_error("Could not load lidar_config.yaml");
+            throw std::runtime_error("Could not load config.yaml");
         }
 
         min_x_ = -2.0;
@@ -60,15 +60,16 @@ public:
         max_y_ = -0.3;
         max_z_ = 2.0;
         min_wall_points_ = 50;
+        min_wall_size_ = 0.5; // default
 
-        if (config["wall_detection"])
+        if (config["lidar"] && config["lidar"]["wall_detection"])
         {
-            auto wd = config["wall_detection"];
+            auto wd = config["lidar"]["wall_detection"];
             if (!(wd["crop_min_x"] && wd["crop_min_y"] && wd["crop_min_z"] &&
                   wd["crop_max_x"] && wd["crop_max_y"] && wd["crop_max_z"]))
             {
-                RCLCPP_FATAL(this->get_logger(), "Missing crop box values in lidar_config.yaml under wall_detection!");
-                throw std::runtime_error("Missing crop box values in lidar_config.yaml");
+                RCLCPP_FATAL(this->get_logger(), "Missing crop box values in config.yaml under lidar.wall_detection!");
+                throw std::runtime_error("Missing crop box values in config.yaml");
             }
             min_x_ = wd["crop_min_x"].as<double>();
             min_y_ = wd["crop_min_y"].as<double>();
@@ -80,60 +81,55 @@ public:
             {
                 min_wall_points_ = wd["min_wall_points"].as<int>();
             }
+            if (wd["min_wall_size"])
+            {
+                min_wall_size_ = wd["min_wall_size"].as<double>();
+            }
         }
         else
         {
-            RCLCPP_FATAL(this->get_logger(), "No wall_detection section in lidar_config.yaml!");
-            throw std::runtime_error("No wall_detection section in lidar_config.yaml");
+            RCLCPP_FATAL(this->get_logger(), "No lidar.wall_detection section in config.yaml!");
+            throw std::runtime_error("No lidar.wall_detection section in config.yaml");
         }
 
-        std::string painting_config_path;
-        try
+        if (!config["painting"] || 
+            !config["painting"]["workspace"] ||
+            !config["painting"]["workspace"]["min_x"] || !config["painting"]["workspace"]["max_x"] ||
+            !config["painting"]["workspace"]["min_y"] || !config["painting"]["workspace"]["max_y"] ||
+            !config["painting"]["workspace"]["min_z"] || !config["painting"]["workspace"]["max_z"])
         {
-            auto pkg_share = ament_index_cpp::get_package_share_directory("ur5e_controller");
-            painting_config_path = pkg_share + "/config/painting_config.yaml";
+            RCLCPP_FATAL(this->get_logger(), "Missing required painting workspace bounds in config.yaml!");
+            throw std::runtime_error("Missing required painting workspace bounds in config.yaml");
         }
-        catch (...)
-        {
-            painting_config_path = std::string(std::getenv("HOME")) + "/Wall-Painting-Robot/src/ur5e_controller/config/painting_config.yaml";
-            RCLCPP_WARN(this->get_logger(), "Could not find package share, using fallback painting config path: %s", painting_config_path.c_str());
-        }
-        YAML::Node painting_config;
-        try
-        {
-            painting_config = YAML::LoadFile(painting_config_path);
-        }
-        catch (const std::exception &e)
-        {
-            RCLCPP_FATAL(this->get_logger(), "Missing painting_config.yaml: %s", e.what());
-            throw std::runtime_error("Could not load painting_config.yaml");
-        }
-        // Painting configuration bounds and robot transform params
-        if (!painting_config["painting"] ||
-            !painting_config["painting"]["min_x"] || !painting_config["painting"]["max_x"] ||
-            !painting_config["painting"]["min_y"] || !painting_config["painting"]["max_y"] ||
-            !painting_config["painting"]["min_z"] || !painting_config["painting"]["max_z"])
-        {
-            RCLCPP_FATAL(this->get_logger(), "Missing required painting bounds in painting_config.yaml!");
-            throw std::runtime_error("Missing required painting bounds in painting_config.yaml");
-        }
-        painting_min_x_ = painting_config["painting"]["min_x"].as<double>();
-        painting_max_x_ = painting_config["painting"]["max_x"].as<double>();
-        painting_min_y_ = painting_config["painting"]["min_y"].as<double>();
-        painting_max_y_ = painting_config["painting"]["max_y"].as<double>();
-        painting_min_z_ = painting_config["painting"]["min_z"].as<double>();
-        painting_max_z_ = painting_config["painting"]["max_z"].as<double>();
+        
+        auto painting_workspace = config["painting"]["workspace"];
+        painting_min_x_ = painting_workspace["min_x"].as<double>();
+        painting_max_x_ = painting_workspace["max_x"].as<double>();
+        painting_min_y_ = painting_workspace["min_y"].as<double>();
+        painting_max_y_ = painting_workspace["max_y"].as<double>();
+        painting_min_z_ = painting_workspace["min_z"].as<double>();
+        painting_max_z_ = painting_workspace["max_z"].as<double>();
 
-        // Load scale_xy, add_x, add_y from yaml or use defaults
-        scale_xy_ = painting_config["painting"]["scale_xy"] ? painting_config["painting"]["scale_xy"].as<double>() : 0.94;
-        add_y_ = painting_config["painting"]["add_y"] ? painting_config["painting"]["add_y"].as<double>() : -0.135;
-        add_x_ = painting_config["painting"]["add_x"] ? painting_config["painting"]["add_x"].as<double>() : 0.0;
+        // Load scale_xy, offset_x, offset_y from yaml or use defaults
+        auto painting_transform = config["painting"]["transform"];
+        if (painting_transform)
+        {
+            scale_xy_ = painting_transform["scale_xy"] ? painting_transform["scale_xy"].as<double>() : 0.94;
+            add_x_ = painting_transform["offset_x"] ? painting_transform["offset_x"].as<double>() : 0.0;
+            add_y_ = painting_transform["offset_y"] ? painting_transform["offset_y"].as<double>() : -0.135;
+        }
+        else
+        {
+            scale_xy_ = 0.94;
+            add_x_ = 0.0;
+            add_y_ = -0.135;
+        }
 
-        RCLCPP_INFO(this->get_logger(), "Painting bounds loaded from config:");
+        RCLCPP_INFO(this->get_logger(), "Painting workspace bounds loaded from config:");
         RCLCPP_INFO(this->get_logger(), "  X: [%.2f, %.2f]", painting_min_x_, painting_max_x_);
         RCLCPP_INFO(this->get_logger(), "  Y: [%.2f, %.2f]", painting_min_y_, painting_max_y_);
         RCLCPP_INFO(this->get_logger(), "  Z: [%.2f, %.2f]", painting_min_z_, painting_max_z_);
-        RCLCPP_INFO(this->get_logger(), "Robot transform params: scale_xy=%.3f, add_x=%.3f, add_y=%.3f", scale_xy_, add_x_, add_y_);
+        RCLCPP_INFO(this->get_logger(), "Robot transform params: scale_xy=%.3f, offset_x=%.3f, offset_y=%.3f", scale_xy_, add_x_, add_y_);
 
         // Use correct topic from config (as in livox_converter.py)
         std::string point_cloud_topic = "/livox/point_cloud";
@@ -166,6 +162,7 @@ public:
         this->declare_parameter<double>("crop_max_y", max_y_);
         this->declare_parameter<double>("crop_max_z", max_z_);
         this->declare_parameter<int>("min_wall_points", min_wall_points_);
+        this->declare_parameter<double>("min_wall_size", min_wall_size_);
 
         // Set initial values from parameters (overrides YAML if set)
         min_x_ = this->get_parameter("crop_min_x").as_double();
@@ -175,6 +172,7 @@ public:
         max_y_ = this->get_parameter("crop_max_y").as_double();
         max_z_ = this->get_parameter("crop_max_z").as_double();
         min_wall_points_ = this->get_parameter("min_wall_points").as_int();
+        min_wall_size_ = this->get_parameter("min_wall_size").as_double();
 
         // Register callback for parameter updates
         param_callback_handle_ = this->add_on_set_parameters_callback(
@@ -195,6 +193,7 @@ private:
     double min_x_, min_y_, min_z_;
     double max_x_, max_y_, max_z_;
     int min_wall_points_;
+    double min_wall_size_; // add this
 
     // Painting configuration bounds
     double painting_min_x_, painting_max_x_;
@@ -233,6 +232,8 @@ private:
                 max_z_ = param.as_double();
             else if (param.get_name() == "min_wall_points")
                 min_wall_points_ = param.as_int();
+            else if (param.get_name() == "min_wall_size")
+                min_wall_size_ = param.as_double();
         }
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
@@ -250,6 +251,7 @@ private:
         max_y_ = this->get_parameter("crop_max_y").as_double();
         max_z_ = this->get_parameter("crop_max_z").as_double();
         min_wall_points_ = this->get_parameter("min_wall_points").as_int();
+        min_wall_size_ = this->get_parameter("min_wall_size").as_double();
 
         pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
         pcl::fromROSMsg(*msg, *cloud);
@@ -390,8 +392,8 @@ private:
             }
             output = tf_buffer_->transform(input, "base", tf2::durationFromSec(1.0));
             // Negate x and y to match robot base orientation (as in wall_painter)
-            output.point.x = -output.point.x;
-            output.point.y = -output.point.y;
+            // output.point.x = -output.point.x;
+            // output.point.y = -output.point.y;
             return output.point;
         }
         catch (const tf2::TransformException &ex)
@@ -445,6 +447,19 @@ private:
         {
             Eigen::Vector3f corner = plane_point + u * uv.first + v * uv.second;
             corners_3d.push_back(corner);
+        }
+
+        // --- Compute wall real-world size and filter by min_wall_size_ ---
+        if (corners_3d.size() == 4)
+        {
+            // Compute width (distance between [0] and [3]), height (distance between [0] and [1])
+            double width = (corners_3d[0] - corners_3d[3]).norm();
+            double height = (corners_3d[0] - corners_3d[1]).norm();
+            if (width < min_wall_size_ || height < min_wall_size_)
+            {
+                RCLCPP_INFO(this->get_logger(), "Wall rejected: size too small (width=%.3f, height=%.3f, min=%.3f)", width, height, min_wall_size_);
+                return;
+            }
         }
 
         // Transform corners from lidar frame to robot base frame before robot-specific transforms

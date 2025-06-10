@@ -88,7 +88,7 @@ public:
         move_group_->setPlanningTime(1.0);
 
         moveToHome();
-        rclcpp::sleep_for(std::chrono::milliseconds(1500));
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
 
         int wait_count = 0;
         while (!wall_received_ && rclcpp::ok() && wait_count < 30)
@@ -183,6 +183,8 @@ private:
 
     std::vector<geometry_msgs::msg::Point> top_contact_points_;
     std::vector<geometry_msgs::msg::Point> bottom_contact_points_;
+
+    double wall_angle_;
 
     class ProgressBar
     {
@@ -293,45 +295,52 @@ private:
         try
         {
             std::string package_share_directory = ament_index_cpp::get_package_share_directory("ur5e_controller");
-            std::string config_file = package_share_directory + "/config/painting_config.yaml";
+            std::string config_file = package_share_directory + "/config/config.yaml";
 
             YAML::Node config = YAML::LoadFile(config_file);
 
-            if (!config["painting"])
+            if (!config["painting"] || !config["painting"]["process"])
             {
-                RCLCPP_ERROR(this->get_logger(), "Missing 'painting' section in config file");
+                RCLCPP_ERROR(this->get_logger(), "Missing 'painting.process' section in config file");
                 rclcpp::shutdown();
                 exit(EXIT_FAILURE);
             }
 
-            auto painting_config = config["painting"];
-            if (!painting_config["horizontal_step"] || !painting_config["force_threshold"])
+            auto painting_process = config["painting"]["process"];
+            if (!painting_process["horizontal_step"] || !painting_process["force_threshold"])
             {
                 RCLCPP_ERROR(this->get_logger(), "Missing required painting parameters (horizontal_step, force_threshold)");
                 rclcpp::shutdown();
                 exit(EXIT_FAILURE);
             }
 
-            horizontal_step_ = painting_config["horizontal_step"].as<double>();
-            force_threshold_ = painting_config["force_threshold"].as<double>();
+            horizontal_step_ = painting_process["horizontal_step"].as<double>();
+            force_threshold_ = painting_process["force_threshold"].as<double>();
             
-            if (painting_config["num_refuels"])
+            if (painting_process["num_refuels"])
             {
-                num_refuels_ = painting_config["num_refuels"].as<int>();
+                num_refuels_ = painting_process["num_refuels"].as<int>();
             }
             else
             {
                 num_refuels_ = 0;
             }
 
-            // Load painting orientation (default to M_PI, M_PI/2, 0.0 if not present)
-            if (painting_config["painting_orientation_roll"] && 
-                painting_config["painting_orientation_pitch"] && 
-                painting_config["painting_orientation_yaw"])
+            if (config["painting"]["orientation"])
             {
-                painting_orientation_roll_ = painting_config["painting_orientation_roll"].as<double>();
-                painting_orientation_pitch_ = painting_config["painting_orientation_pitch"].as<double>();
-                painting_orientation_yaw_ = painting_config["painting_orientation_yaw"].as<double>();
+                auto orientation = config["painting"]["orientation"];
+                if (orientation["roll"] && orientation["pitch"] && orientation["yaw"])
+                {
+                    painting_orientation_roll_ = orientation["roll"].as<double>();
+                    painting_orientation_pitch_ = orientation["pitch"].as<double>();
+                    painting_orientation_yaw_ = orientation["yaw"].as<double>();
+                }
+                else
+                {
+                    painting_orientation_roll_ = M_PI;
+                    painting_orientation_pitch_ = M_PI / 2;
+                    painting_orientation_yaw_ = 0.0;
+                }
             }
             else
             {
@@ -340,15 +349,15 @@ private:
                 painting_orientation_yaw_ = 0.0;
             }
 
-            if (!config["motion"])
+            if (!config["robot"] || !config["robot"]["motion"])
             {
-                RCLCPP_ERROR(this->get_logger(), "Missing 'motion' section in config file");
+                RCLCPP_ERROR(this->get_logger(), "Missing 'robot.motion' section in config file");
                 rclcpp::shutdown();
                 exit(EXIT_FAILURE);
             }
 
-            auto motion_config = config["motion"];
-            if (!motion_config["approach_step"] || !motion_config["max_approach_steps"] ||
+            auto motion_config = config["robot"]["motion"];
+            if (!motion_config["approach_step_size"] || !motion_config["max_approach_steps"] ||
                 !motion_config["velocity_scale"])
             {
                 RCLCPP_ERROR(this->get_logger(), "Missing required motion parameters");
@@ -356,7 +365,7 @@ private:
                 exit(EXIT_FAILURE);
             }
 
-            approach_step_ = motion_config["approach_step"].as<double>();
+            approach_step_ = motion_config["approach_step_size"].as<double>();
             max_approach_steps_ = motion_config["max_approach_steps"].as<int>();
             velocity_scale_ = motion_config["velocity_scale"].as<double>();
             
@@ -369,14 +378,14 @@ private:
                 tool_size_ = 0.05;
             }
 
-            if (!config["home_position"])
+            if (!config["robot"] || !config["robot"]["home_position"])
             {
-                RCLCPP_ERROR(this->get_logger(), "Missing 'home_position' section in config file");
+                RCLCPP_ERROR(this->get_logger(), "Missing 'robot.home_position' section in config file");
                 rclcpp::shutdown();
                 exit(EXIT_FAILURE);
             }
             
-            auto home_config = config["home_position"];
+            auto home_config = config["robot"]["home_position"];
             if (!home_config["x"] || !home_config["y"] || !home_config["z"] ||
                 !home_config["roll"] || !home_config["pitch"] || !home_config["yaw"])
             {
@@ -413,6 +422,9 @@ private:
 
         approach_distance_x_ = approach_in_x_ ? approach_step_ * wall_direction_ : 0.0;
         approach_distance_y_ = approach_in_x_ ? 0.0 : approach_step_ * wall_direction_;
+
+        wall_angle_ = std::atan2(top2.y - top1.y, top2.x - top1.x);
+        RCLCPP_INFO(this->get_logger(), "Wall angle detected: %f radians", wall_angle_);
 
         geometry_msgs::msg::Point offset_top1 = top1;
         geometry_msgs::msg::Point offset_top2 = top2;
@@ -525,6 +537,38 @@ private:
         rclcpp::shutdown();
     }
 
+    geometry_msgs::msg::Quaternion calculateWallAlignedOrientation()
+    {
+        tf2::Quaternion q_base;
+        q_base.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
+        
+        tf2::Quaternion q_wall;
+        if (approach_in_x_) {
+            q_wall.setRPY(0, 0, wall_angle_);
+        } else {
+            q_wall.setRPY(0, 0, wall_angle_ - M_PI/2);
+        }
+        
+        tf2::Quaternion q_result = q_base * q_wall;
+        q_result.normalize();
+        
+        return tf2::toMsg(q_result);
+    }
+
+    geometry_msgs::msg::Pose rotateForWallMove(const geometry_msgs::msg::Pose &input_pose) 
+    {
+        Eigen::Isometry3d pose_eigen;
+        tf2::fromMsg(input_pose, pose_eigen);
+
+        Eigen::AngleAxisd rotation(-M_PI / 2, Eigen::Vector3d::UnitZ());
+        
+        pose_eigen = pose_eigen * Eigen::Isometry3d(rotation);
+
+        geometry_msgs::msg::Pose rotated_pose;
+        rotated_pose = tf2::toMsg(pose_eigen);
+        return rotated_pose;
+    }
+
     void performRoundingPass()
     {
         if (top_contact_points_.empty() || bottom_contact_points_.empty())
@@ -554,22 +598,6 @@ private:
             return scaled_points;
         };
 
-        auto rotateZ90Degrees = [](const geometry_msgs::msg::Pose &input_pose) -> geometry_msgs::msg::Pose
-        {
-            // Convert input pose to Eigen transformation
-            Eigen::Isometry3d pose_eigen;
-            tf2::fromMsg(input_pose, pose_eigen);
-
-            // Apply 90-degree (M_PI/2) rotation around Z-axis in tool frame
-            // Note: multiplying on the right applies the rotation in the tool frame
-            pose_eigen = pose_eigen * Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
-
-            // Convert back to geometry_msgs::Pose and return
-            geometry_msgs::msg::Pose rotated_pose;
-            rotated_pose = tf2::toMsg(pose_eigen);
-            return rotated_pose;
-        };
-
         std::vector<geometry_msgs::msg::Point> scaled_top_points = scale_points(top_contact_points_);
         std::vector<geometry_msgs::msg::Point> scaled_bottom_points = scale_points(bottom_contact_points_);
 
@@ -581,91 +609,69 @@ private:
 
         std::vector<geometry_msgs::msg::Pose> waypoints;
 
-        // Current position to starting approach
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
         waypoints.push_back(current_pose.pose);
 
-        // Slightly scaled back position for safety
         geometry_msgs::msg::PoseStamped current_pose_scaled = move_group_->getCurrentPose();
         current_pose_scaled.pose.position.x *= .95;
         current_pose_scaled.pose.position.y *= .95;
         waypoints.push_back(current_pose_scaled.pose);
 
-        // Approach to first point
         geometry_msgs::msg::Pose first_pose;
         first_pose.position = simplified_top_points.front();
         first_pose.position.x *= 0.95;
         first_pose.position.y *= 0.95;
-        tf2::Quaternion q;
-        q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-        first_pose.orientation = tf2::toMsg(q);
+        first_pose.orientation = calculateWallAlignedOrientation();
         waypoints.push_back(first_pose);
 
-        // Add rotated waypoint at same position before starting horizontal movement
-        geometry_msgs::msg::Pose horizontal_first_pose = rotateZ90Degrees(first_pose);
+        geometry_msgs::msg::Pose horizontal_first_pose = rotateForWallMove(first_pose);
         waypoints.push_back(horizontal_first_pose);
 
-        // Top edge - horizontal movement (rotated 90 degrees)
         for (size_t i = 0; i < simplified_top_points.size(); ++i)
         {
             geometry_msgs::msg::Pose pose;
             pose.position = simplified_top_points[i];
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            pose.orientation = tf2::toMsg(q);
-            // Apply 90 degree rotation for horizontal movement
+            pose.orientation = calculateWallAlignedOrientation();
             pose.position.z *= 1.015;
-            waypoints.push_back(rotateZ90Degrees(pose));
+            waypoints.push_back(rotateForWallMove(pose));
         }
 
         if (!simplified_bottom_points.empty())
         {
-            // Last point on top horizontal path
             geometry_msgs::msg::Pose last_top_pose;
             last_top_pose.position = simplified_top_points.back();
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            last_top_pose.orientation = tf2::toMsg(q);
+            last_top_pose.orientation = calculateWallAlignedOrientation();
             
-            // Add unrotated waypoint for transition to vertical movement
             waypoints.push_back(last_top_pose);
             
-            // Vertical movement down to bottom (unrotated)
             geometry_msgs::msg::Pose bottom_pose;
             bottom_pose.position = simplified_bottom_points.back();
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            bottom_pose.orientation = tf2::toMsg(q);
+            bottom_pose.orientation = calculateWallAlignedOrientation();
             waypoints.push_back(bottom_pose);
             
-            // Add rotated waypoint at same position before starting horizontal movement on bottom
-            waypoints.push_back(rotateZ90Degrees(bottom_pose));
+            waypoints.push_back(rotateForWallMove(bottom_pose));
         }
 
-        // Bottom edge - horizontal movement (rotated 90 degrees)
         for (int i = static_cast<int>(simplified_bottom_points.size()) - 2; i >= 0; --i)
         {
             geometry_msgs::msg::Pose pose;
             pose.position = simplified_bottom_points[i];
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            pose.orientation = tf2::toMsg(q);
-            // Apply 90 degree rotation for horizontal movement
-            waypoints.push_back(rotateZ90Degrees(pose));
+            pose.orientation = calculateWallAlignedOrientation();
+            pose.position.z *= 0.98;
+            waypoints.push_back(rotateForWallMove(pose));
         }
 
         if (!simplified_top_points.empty())
         {
-            // First point on bottom horizontal path
             geometry_msgs::msg::Pose first_bottom_pose;
             first_bottom_pose.position = simplified_bottom_points.front();
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            first_bottom_pose.orientation = tf2::toMsg(q);
+            first_bottom_pose.orientation = calculateWallAlignedOrientation();
             
-            // Add unrotated waypoint for transition to vertical movement
             waypoints.push_back(first_bottom_pose);
             
-            // Vertical movement up to top (unrotated)
             geometry_msgs::msg::Pose top_pose;
             top_pose.position = simplified_top_points.front();
-            q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-            top_pose.orientation = tf2::toMsg(q);
+            top_pose.orientation = calculateWallAlignedOrientation();
             waypoints.push_back(top_pose);
         }
 
@@ -729,7 +735,7 @@ private:
         moveToHome();
         geometry_msgs::msg::PoseStamped home_pose = move_group_->getCurrentPose();
         geometry_msgs::msg::Pose down_pose = home_pose.pose;
-        down_pose.position.z -= 0.05;
+        down_pose.position.z -= 0.07;
 
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(home_pose.pose);
@@ -855,9 +861,7 @@ private:
         geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
         geometry_msgs::msg::Pose target_pose;
         target_pose.position = target_point;
-        tf2::Quaternion q;
-        q.setRPY(painting_orientation_roll_, painting_orientation_pitch_, painting_orientation_yaw_);
-        target_pose.orientation = tf2::toMsg(q);
+        target_pose.orientation = calculateWallAlignedOrientation();
 
         std::vector<geometry_msgs::msg::Pose> waypoints;
         waypoints.push_back(current_pose.pose);

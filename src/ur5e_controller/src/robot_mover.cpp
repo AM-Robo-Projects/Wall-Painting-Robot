@@ -9,9 +9,7 @@
 #include <filesystem>
 #include <vector>
 #include <sstream>
-
 #include <nlohmann/json.hpp>
-
 #include "rclcpp/rclcpp.hpp"
 #include "moveit/move_group_interface/move_group_interface.h"
 #include "geometry_msgs/msg/pose.hpp"
@@ -27,9 +25,7 @@ namespace fs = std::filesystem;
 
 struct SavedPoint {
   std::string name;
-  // Cartesian pose
   geometry_msgs::msg::Pose pose;
-  // Joint values
   std::vector<double> joint_values;
 };
 
@@ -240,92 +236,76 @@ public:
       }
       
       bool move_requested = false;
-      
-      // Convert current pose to Eigen for TCP-relative manipulations
       Eigen::Isometry3d current_pose_eigen;
       tf2::fromMsg(current_pose_, current_pose_eigen);
       
       switch (key) {
         case 'w': case 'W':
-          // Move in +X direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(linear_step_size_, 0, 0);
           move_requested = true;
           std::cout << "Moving +X (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 's': case 'S':
-          // Move in -X direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(-linear_step_size_, 0, 0);
           move_requested = true;
           std::cout << "Moving -X (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'd': case 'D':
-          // Move in +Y direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, linear_step_size_, 0);
           move_requested = true;
           std::cout << "Moving +Y (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'a': case 'A':
-          // Move in -Y direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, -linear_step_size_, 0);
           move_requested = true;
           std::cout << "Moving -Y (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'q': case 'Q':
-          // Move in +Z direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, 0, linear_step_size_);
           move_requested = true;
           std::cout << "Moving +Z (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'e': case 'E':
-          // Move in -Z direction in tool frame
           current_pose_eigen = current_pose_eigen * Eigen::Translation3d(0, 0, -linear_step_size_);
           move_requested = true;
           std::cout << "Moving -Z (tool frame): " << linear_step_size_ << "m\n";
           break;
         case 'u': case 'U':
-          // Rotate around tool X-axis (roll)
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitX());
           move_requested = true;
           std::cout << "Rotating around tool X-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'o': case 'O':
-          // Rotate around tool X-axis (roll) negative
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitX());
           move_requested = true;
           std::cout << "Rotating around tool X-axis: " << -angular_step_size_ << " rad\n";
           break;
         case 'i': case 'I':
-          // Rotate around tool Y-axis (pitch)
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitY());
           move_requested = true;
           std::cout << "Rotating around tool Y-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'k': case 'K':
-          // Rotate around tool Y-axis (pitch) negative
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitY());
           move_requested = true;
           std::cout << "Rotating around tool Y-axis: " << -angular_step_size_ << " rad\n";
           break;
         case 'j': case 'J':
-          // Rotate around tool Z-axis (yaw)
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(angular_step_size_, Eigen::Vector3d::UnitZ());
           move_requested = true;
           std::cout << "Rotating around tool Z-axis: " << angular_step_size_ << " rad\n";
           break;
         case 'l': case 'L':
-          // Rotate around tool Z-axis (yaw) negative
           current_pose_eigen = current_pose_eigen * 
                               Eigen::AngleAxisd(-angular_step_size_, Eigen::Vector3d::UnitZ());
           move_requested = true;
           std::cout << "Rotating around tool Z-axis: " << -angular_step_size_ << " rad\n";
           break;
-        
-        // Keep all other commands the same
         case 'f': case 'F':
           if (force_feedback_enabled_) {
             std::cout << "Disabling force feedback before orientation adjustment..." << std::endl;
@@ -411,15 +391,12 @@ public:
           break;
         }
         case 'p': case 'P':
-          // Save current point
           saveCurrentPoint();
           break;
         case 'g': case 'G':
-          // Go to saved point
           gotoSavedPoint();
           break;
         case 'y': case 'Y':
-          // List saved points
           listSavedPoints();
           break;
         case 'x': case 'X': case 27:
@@ -435,15 +412,10 @@ public:
           std::cout << "Disabling force feedback before movement..." << std::endl;
           toggleForceFeedback();
         }
-        
-        // Convert Eigen transformation back to geometry_msgs::Pose
         geometry_msgs::msg::Pose target_pose = tf2::toMsg(current_pose_eigen);
-        
-        // Update current orientation values for display
         tf2::Quaternion q;
         tf2::fromMsg(target_pose.orientation, q);
         tf2::Matrix3x3(q).getRPY(current_roll_, current_pitch_, current_yaw_);
-        
         moveToPosition(target_pose);
         printInstructions();
       } else if (key == 'f' || key == 'F' || key == 'r' || key == 'R' || 
@@ -474,7 +446,6 @@ private:
       if (success) {
         std::cout << "Done.\n";
         current_pose_ = target;
-        // Update joint values after cartesian movement
         current_joint_values_ = move_group_->getCurrentJointValues();
       } else {
         std::cout << "Failed!\n";
@@ -497,7 +468,7 @@ private:
       success = move_group_->execute(plan) == moveit::core::MoveItErrorCode::SUCCESS;
       if (success) {
         std::cout << "Done.\n";
-        getCurrentPose(); // Update current pose and joint values
+        getCurrentPose();
       } else {
         std::cout << "Failed!\n";
         RCLCPP_ERROR(get_logger(), "Joint movement execution failed");
@@ -510,38 +481,25 @@ private:
 
   void createSavePointDirectory() {
     try {
-      // Get the package share directory through ROS API
       std::string package_share_directory = ament_index_cpp::get_package_share_directory("ur5e_controller");
-      
-      // Create the dedicated saved_points directory at the same level as config
       save_points_dir_ = fs::path(package_share_directory) / "saved_points";
-      
       RCLCPP_INFO(get_logger(), "Using directory for saved points: %s", 
                   save_points_dir_.string().c_str());
-      
-      // Ensure the directory exists in install location
       if (!fs::exists(save_points_dir_)) {
         fs::create_directories(save_points_dir_);
         RCLCPP_INFO(get_logger(), "Created directory for saved points: %s", 
                     save_points_dir_.string().c_str());
       }
-
-      // Use the compile-time defined source directory path
 #ifdef SAVED_POINTS_SOURCE_DIR
       fs::path src_save_points_dir = SAVED_POINTS_SOURCE_DIR;
       bool src_dir_found = true;
       RCLCPP_INFO(get_logger(), "Using compile-time source directory: %s", 
                 src_save_points_dir.string().c_str());
 #else
-      // Fallback to dynamic detection if compile-time path not available
       fs::path src_save_points_dir;
       bool src_dir_found = false;
-      
-      // Try to find the source directory using environment variables
       char* ros_workspace = std::getenv("ROS_WORKSPACE");
-      
       if (ros_workspace) {
-        // Use ROS_WORKSPACE environment variable if available
         src_save_points_dir = fs::path(ros_workspace) / "src" / "ur5e_controller" / "saved_points";
         if (fs::exists(src_save_points_dir.parent_path())) {
           src_dir_found = true;
@@ -549,8 +507,6 @@ private:
                     src_save_points_dir.string().c_str());
         }
       }
-      
-      // Try absolute path from PROJECT_SOURCE_DIR if defined
 #ifdef PROJECT_SOURCE_DIR
       if (!src_dir_found) {
         src_save_points_dir = fs::path(PROJECT_SOURCE_DIR) / "saved_points";
@@ -561,13 +517,8 @@ private:
         }
       }
 #endif
-
-      // Additional fallback methods if still not found
       if (!src_dir_found) {
-        // Try to find the source directory by navigating up from the binary
         fs::path binary_path = fs::canonical("/proc/self/exe");
-        
-        // Try common directory structures for ROS workspaces
         std::vector<std::string> possible_paths = {
           "src/ur5e_controller/saved_points",
           "../src/ur5e_controller/saved_points",
@@ -575,7 +526,6 @@ private:
           "../../../src/ur5e_controller/saved_points",
           "../../../../src/ur5e_controller/saved_points"
         };
-        
         for (const auto& rel_path : possible_paths) {
           fs::path candidate = binary_path.parent_path() / rel_path;
           if (fs::exists(candidate.parent_path())) {
@@ -588,27 +538,21 @@ private:
         }
       }
 #endif
-
-      // Create source directory if found
       if (src_dir_found && !fs::exists(src_save_points_dir)) {
         try {
           fs::create_directories(src_save_points_dir);
           RCLCPP_INFO(get_logger(), "Created source directory for saved points: %s", 
                       src_save_points_dir.string().c_str());
-          source_points_dir_ = src_save_points_dir; // Store for later use
+          source_points_dir_ = src_save_points_dir;
         } catch (const std::exception& e) {
           RCLCPP_WARN(get_logger(), "Could not create source directory: %s, Error: %s", 
                     src_save_points_dir.string().c_str(), e.what());
           src_dir_found = false;
         }
       } else if (src_dir_found) {
-        source_points_dir_ = src_save_points_dir; // Store for later use
+        source_points_dir_ = src_save_points_dir;
       }
-
-      // Define the JSON file path
       points_file_path_ = save_points_dir_ / "saved_points.json";
-      
-      // If the file doesn't exist in the install dir but exists in the source dir, copy it
       if (src_dir_found) {
         fs::path src_points_file = source_points_dir_ / "saved_points.json";
         if (!fs::exists(points_file_path_) && fs::exists(src_points_file)) {
@@ -621,19 +565,14 @@ private:
           }
         }
       }
-      
-      // Initialize empty JSON file if it doesn't exist
       if (!fs::exists(points_file_path_)) {
         nlohmann::json empty_points = nlohmann::json::array();
-        
         std::ofstream file(points_file_path_);
         if (file.is_open()) {
-          file << empty_points.dump(2); // Pretty print with 2-space indent
+          file << empty_points.dump(2);
           file.close();
           RCLCPP_INFO(get_logger(), "Created empty saved points file: %s", 
                       points_file_path_.string().c_str());
-          
-          // Also create a copy in the source tree if available
           if (src_dir_found) {
             fs::path src_points_file = source_points_dir_ / "saved_points.json";
             if (!fs::exists(src_points_file)) {
@@ -664,12 +603,9 @@ private:
 
   void savePointsToJsonFile() {
     nlohmann::json points_array = nlohmann::json::array();
-  
     for (size_t i = 0; i < saved_points_.size(); i++) {
       const auto& point = saved_points_[i];
-      
       nlohmann::json point_json;
-    
       point_json["name"] = point.name;
       point_json["pose"]["position"]["x"] = point.pose.position.x;
       point_json["pose"]["position"]["y"] = point.pose.position.y;
@@ -678,20 +614,14 @@ private:
       point_json["pose"]["orientation"]["y"] = point.pose.orientation.y;
       point_json["pose"]["orientation"]["z"] = point.pose.orientation.z;
       point_json["pose"]["orientation"]["w"] = point.pose.orientation.w;
-    
       nlohmann::json joint_values_array = nlohmann::json::array();
-    
       for (size_t j = 0; j < point.joint_values.size(); j++) {
         joint_values_array.push_back(point.joint_values[j]);
       }
       point_json["joint_values"] = joint_values_array;
-    
       points_array.push_back(point_json);
     }
-    
     std::string json_content = points_array.dump(2);
-    
-    // Save to the install directory location
     std::ofstream file(points_file_path_);
     if (file.is_open()) {
       file << json_content;
@@ -702,17 +632,12 @@ private:
       RCLCPP_ERROR(get_logger(), "Failed to save points to JSON file: %s", 
                    points_file_path_.string().c_str());
     }
-    
-    // Always try to save to source directory too (even if not found before)
-    // This provides additional opportunity to find the source dir
     if (!source_points_dir_.empty()) {
       fs::path src_points_file = source_points_dir_ / "saved_points.json";
       try {
-        // Make sure parent directory exists
         if (!fs::exists(source_points_dir_)) {
           fs::create_directories(source_points_dir_);
         }
-        
         std::ofstream src_file(src_points_file);
         if (src_file.is_open()) {
           src_file << json_content;
@@ -726,13 +651,10 @@ private:
       }
     } else {
       RCLCPP_WARN(get_logger(), "Source directory not found, points saved only to install directory");
-      
-      // Try hardcoded common locations as a last resort
       std::vector<std::string> common_src_paths = {
         "/home/irobot/Wall-Painting-Robot/src/ur5e_controller/saved_points",
         "/home/irobot/ros2_ws/src/ur5e_controller/saved_points"
       };
-      
       for (const auto& path_str : common_src_paths) {
         fs::path try_path(path_str);
         try {
@@ -740,7 +662,6 @@ private:
             if (!fs::exists(try_path)) {
               fs::create_directories(try_path);
             }
-            
             fs::path try_file = try_path / "saved_points.json";
             std::ofstream try_src_file(try_file);
             if (try_src_file.is_open()) {
@@ -748,12 +669,11 @@ private:
               try_src_file.close();
               RCLCPP_INFO(get_logger(), "Successfully saved points to potential source at: %s",
                         try_file.string().c_str());
-              source_points_dir_ = try_path;  // Update the source dir for future saves
+              source_points_dir_ = try_path;
               break;
             }
           }
         } catch (const std::exception& e) {
-          // Just continue to the next path
         }
       }
     }
@@ -761,21 +681,18 @@ private:
 
   void loadSavedPoints() {
     saved_points_.clear();
-    
     try {
       if (!fs::exists(points_file_path_)) {
         RCLCPP_INFO(get_logger(), "No saved points file found at: %s", 
                     points_file_path_.string().c_str());
         return;
       }
-      
       std::ifstream file(points_file_path_);
       if (!file.is_open()) {
         RCLCPP_ERROR(get_logger(), "Failed to open saved points file: %s", 
                      points_file_path_.string().c_str());
         return;
       }
-      
       nlohmann::json points_array;
       try {
         file >> points_array;
@@ -783,28 +700,22 @@ private:
         RCLCPP_ERROR(get_logger(), "Error parsing JSON: %s", e.what());
         return;
       }
-    
       for (const auto& point_json : points_array) {
         SavedPoint point;
         point.name = point_json["name"];
-        
         point.pose.position.x = point_json["pose"]["position"]["x"];
         point.pose.position.y = point_json["pose"]["position"]["y"];
         point.pose.position.z = point_json["pose"]["position"]["z"];
-        
         point.pose.orientation.x = point_json["pose"]["orientation"]["x"];
         point.pose.orientation.y = point_json["pose"]["orientation"]["y"];
         point.pose.orientation.z = point_json["pose"]["orientation"]["z"];
         point.pose.orientation.w = point_json["pose"]["orientation"]["w"];
-        
         for (const auto& joint_value : point_json["joint_values"]) {
           point.joint_values.push_back(joint_value);
         }
-        
         saved_points_.push_back(point);
         RCLCPP_INFO(get_logger(), "Loaded saved point: %s", point.name.c_str());
       }
-      
       RCLCPP_INFO(get_logger(), "Loaded %zu saved points", saved_points_.size());
     } catch (const std::exception& e) {
       RCLCPP_ERROR(get_logger(), "Error loading saved points: %s", e.what());
@@ -814,7 +725,6 @@ private:
   void listSavedPoints() {
     system("clear");
     std::cout << "\n=== Saved Points (" << saved_points_.size() << ") ===\n\n";
-    
     if (saved_points_.empty()) {
       std::cout << "No saved points found.\n";
     } else {
@@ -824,7 +734,6 @@ private:
         tf2::Quaternion q;
         tf2::fromMsg(point.pose.orientation, q);
         tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-        
         std::cout << i+1 << ". " << point.name << "\n";
         std::cout << "   Pose: X=" << std::fixed << std::setprecision(4) << point.pose.position.x 
                   << " Y=" << point.pose.position.y 
@@ -840,7 +749,6 @@ private:
         std::cout << "\n\n";
       }
     }
-    
     std::cout << "\nPress any key to continue...";
     char c;
     read(STDIN_FILENO, &c, 1);
@@ -851,19 +759,15 @@ private:
       std::cout << "No saved points available.\n";
       return;
     }
-    
     system("clear");
     std::cout << "\n=== Go to Saved Point ===\n\n";
     for (size_t i = 0; i < saved_points_.size(); ++i) {
       std::cout << i+1 << ". " << saved_points_[i].name << "\n";
     }
-    
     std::cout << "\nEnter point number (1-" << saved_points_.size() << ") or 0 to cancel: ";
     restoreTerminal();
-    
     std::string input;
     std::getline(std::cin, input);
-    
     int choice = 0;
     try {
       choice = std::stoi(input);
@@ -872,28 +776,21 @@ private:
       configureTerminal();
       return;
     }
-    
     if (choice < 1 || choice > static_cast<int>(saved_points_.size())) {
       std::cout << "Invalid selection. Operation cancelled.\n";
       configureTerminal();
       return;
     }
-    
     const SavedPoint& selected_point = saved_points_[choice-1];
-    
     std::cout << "Selected point: " << selected_point.name << "\n";
     std::cout << "Move using [C]artesian coordinates or [J]oint values? (C/J): ";
     std::string move_mode;
     std::getline(std::cin, move_mode);
-    
     configureTerminal();
-    
-    // Disable force feedback if enabled
     if (force_feedback_enabled_) {
       std::cout << "Disabling force feedback before movement..." << std::endl;
       toggleForceFeedback();
     }
-    
     if (!move_mode.empty() && (move_mode[0] == 'j' || move_mode[0] == 'J')) {
       std::cout << "Moving to point '" << selected_point.name << "' using joint values...\n";
       moveToJointPosition(selected_point.joint_values);
@@ -908,14 +805,11 @@ private:
     std::cout << "\nEnter name for this position: ";
     std::string point_name;
     std::getline(std::cin, point_name);
-    
     if (point_name.empty()) {
       std::cout << "Save cancelled - empty name provided.\n";
       configureTerminal();
       return;
     }
-    
-    // Check if name already exists
     for (auto& pt : saved_points_) {
       if (pt.name == point_name) {
         std::cout << "A point with this name already exists. Overwrite? (y/n): ";
@@ -927,7 +821,6 @@ private:
           configureTerminal();
           return;
         }
-        // Remove the existing point
         auto it = std::find_if(saved_points_.begin(), saved_points_.end(),
                          [&point_name](const SavedPoint& p) { return p.name == point_name; });
         if (it != saved_points_.end()) {
@@ -936,16 +829,12 @@ private:
         break;
       }
     }
-    
     SavedPoint new_point;
     new_point.name = point_name;
     new_point.pose = current_pose_;
     new_point.joint_values = current_joint_values_;
     saved_points_.push_back(new_point);
-    
-    // Save to JSON file
     savePointsToJsonFile();
-    
     std::cout << "Position saved as '" << point_name << "'.\n";
     configureTerminal();
   }
@@ -966,10 +855,9 @@ private:
   geometry_msgs::msg::Pose current_pose_;
   std::vector<double> current_joint_values_;
   double current_roll_, current_pitch_, current_yaw_;
-  
   fs::path save_points_dir_;
-  fs::path points_file_path_;  // Path to the JSON file
-  fs::path source_points_dir_; // Path to the source code's saved points directory
+  fs::path points_file_path_;
+  fs::path source_points_dir_;
   std::vector<SavedPoint> saved_points_;
 };
 

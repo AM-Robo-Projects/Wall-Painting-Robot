@@ -182,7 +182,7 @@ def generate_launch_description():
         livox_lidar_launch,
         ur5e_moveit_launch,
         load_and_setup,
-        add_collision_env,
+        # add_collision_env,
         livox_converter,
         wall_detector,
     ]

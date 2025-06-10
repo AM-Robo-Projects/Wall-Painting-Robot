@@ -22,21 +22,27 @@ class LivoxPointCloudConverter(Node):
             self.package_share_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..')
             self.get_logger().warning(f'Package not found in ament index, using relative path: {self.package_share_dir}')
         
-        # Default config path and override with parameter if provided
-        default_config_path = os.path.join(self.package_share_dir, 'config', 'lidar_config.yaml')
+        default_config_path = os.path.join(self.package_share_dir, 'config', 'config.yaml')
         self.declare_parameter('config_path', default_config_path)
         self.config_path = self.get_parameter('config_path').get_parameter_value().string_value
         
-        # Load configuration from YAML
         config = self.load_config()
-        converter_config = config.get('converter', {})
-        transform_config = config.get('transform', {})
         
-        # Set parameters from the configuration
+        if 'lidar' in config and 'converter' in config['lidar']:
+            converter_config = config['lidar']['converter']
+        else:
+            converter_config = {}
+            self.get_logger().warning('No lidar.converter section found in config, using defaults')
+            
+        if 'lidar' in config and 'transform' in config['lidar']:
+            transform_config = config['lidar']['transform']
+        else:
+            transform_config = {}
+            self.get_logger().warning('No lidar.transform section found in config, using defaults')
+        
         self.buffer_duration = float(converter_config.get('buffer_duration', 0.5))
-        self.publish_rate = float(converter_config.get('publish_rate', 10.0))
+        self.publish_rate = 10.0 
         
-        # Fixed topic names, not from config
         self.livox_custom_topic = "/livox/lidar"
         self.point_cloud_topic = "/livox/point_cloud"
         

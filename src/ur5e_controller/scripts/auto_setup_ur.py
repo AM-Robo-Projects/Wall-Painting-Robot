@@ -13,7 +13,7 @@ class URRobotSetup(Node):
         
         self.robot_ip = self.declare_parameter('robot_ip', '172.31.1.200').get_parameter_value().string_value
         self.max_retries = 3
-        self.dashboard_port = 29999  # UR Dashboard Server port
+        self.dashboard_port = 29999
 
         self.list_controllers_client = self.create_client(
             ListControllers, '/controller_manager/list_controllers')
@@ -21,7 +21,6 @@ class URRobotSetup(Node):
             SwitchController, '/controller_manager/switch_controller')
         
     def setup_robot(self):
-        """Complete robot setup process"""
         if self.check_robot_state():
             success = self.load_and_run_program()
             
@@ -50,7 +49,6 @@ class URRobotSetup(Node):
             self.get_logger().error("Failed to prepare robot (power on/brake release). Setup aborted.")
 
     def check_robot_state(self):
-        """Check robot state and power on/release brakes if needed"""
         self.get_logger().info(f"Checking robot state on {self.robot_ip}")
         
         try:
@@ -83,7 +81,6 @@ class URRobotSetup(Node):
             return False
     
     def ensure_robot_powered_on(self, socket_conn):
-        """Ensure robot is powered on"""
         socket_conn.send(b"robotmode\n")
         robot_mode = socket_conn.recv(1024).decode('utf-8').strip()
         
@@ -122,7 +119,6 @@ class URRobotSetup(Node):
             return True
     
     def ensure_brakes_released(self, socket_conn):
-        """Ensure robot brakes are released"""
         socket_conn.send(b"robotmode\n")
         robot_mode = socket_conn.recv(1024).decode('utf-8').strip()
         
@@ -165,7 +161,6 @@ class URRobotSetup(Node):
             return True
 
     def load_and_run_program(self):
-        """Load and run external_control.urp program"""
         self.get_logger().info(f"Attempting to load and run program on robot {self.robot_ip}")
         
         for attempt in range(self.max_retries):
@@ -246,7 +241,6 @@ class URRobotSetup(Node):
         return False
 
     def setup_controllers(self):
-        """Handle controller setup"""
         try:
             self.get_logger().info("Stopping conflicting controllers...")
             self.stop_conflicting_controllers()
@@ -266,7 +260,6 @@ class URRobotSetup(Node):
             self.get_logger().error(f"Error during controller setup: {str(e)}")
 
     def list_controllers(self):
-        """Get list of all controllers and states"""
         req = ListControllers.Request()
         future = self.list_controllers_client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -277,7 +270,6 @@ class URRobotSetup(Node):
             return []
     
     def stop_conflicting_controllers(self):
-        """Stop controllers that might conflict"""
         controllers = self.list_controllers()
         
         controllers_to_stop = []
@@ -309,7 +301,6 @@ class URRobotSetup(Node):
         return False
     
     def activate_controller(self, controller_name):
-        """Activate a specific controller"""
         controllers = self.list_controllers()
         for controller in controllers:
             if controller.name == controller_name:
@@ -327,14 +318,12 @@ class URRobotSetup(Node):
         return False
     
     def switch_controllers(self, start_controllers=None, stop_controllers=None):
-        """Switch controllers using service"""
         if start_controllers is None:
             start_controllers = []
         if stop_controllers is None:
             stop_controllers = []
             
         req = SwitchController.Request()
-        # Use the new field names instead of deprecated ones
         req.activate_controllers = start_controllers
         req.deactivate_controllers = stop_controllers
         req.strictness = SwitchController.Request.BEST_EFFORT
@@ -366,8 +355,6 @@ def main(args=None):
     try:
         setup.setup_robot()
         setup.get_logger().info("Robot setup completed.")
-        
-        # Add distinctive colored message to indicate ready state
         setup.get_logger().info("\033[92m" + "="*25 + "\033[0m")
         setup.get_logger().info("\033[92m" + "ROBOT IS READY FOR USE " + "\033[0m")
         setup.get_logger().info("\033[92m" + "="*25 + "\033[0m")
