@@ -657,7 +657,7 @@ private:
             geometry_msgs::msg::Pose pose;
             pose.position = simplified_bottom_points[i];
             pose.orientation = calculateWallAlignedOrientation();
-            pose.position.z *= 0.98;
+            pose.position.z *= 0.975;
             waypoints.push_back(rotateForWallMove(pose));
         }
 

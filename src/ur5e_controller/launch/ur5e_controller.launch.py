@@ -7,6 +7,7 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
 import yaml
+import sys
 
 def generate_launch_description():
     env_var = SetEnvironmentVariable('ROBOT_MODEL_NAME', 'ur5e')
@@ -21,24 +22,27 @@ def generate_launch_description():
         description='Use simulation time if true'
     )
     
-    lidar_config_file = os.path.join(
+    config_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
         'config',
-        'lidar_config.yaml'
+        'config.yaml'
     )
-    
+
     config_data = {}
     transform_config = {}
     gui_enabled = False
     try:
-        with open(lidar_config_file, 'r') as f:
+        with open(config_file, 'r') as f:
             config_data = yaml.safe_load(f)
-        transform_config = config_data.get('transform', {})
-        gui_enabled = config_data.get('wall_detection', {}).get('enable_crop_box_gui', False)
-        print(f"Loaded lidar configuration from {lidar_config_file}")
+        # Adapt to new config structure
+        lidar_config = config_data.get('lidar', {})
+        transform_config = lidar_config.get('transform', {})
+        gui_enabled = lidar_config.get('wall_detection', {}).get('enable_crop_box_gui', False)
+        print(f"Loaded configuration from {config_file}")
         print(f"GUI enabled: {gui_enabled}")
     except Exception as e:
         print(f"Error loading config file: {e}")
+        sys.exit(1)
     
     kinematics_file = os.path.join(
         get_package_share_directory('ur5e_controller'),
@@ -104,14 +108,14 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='livox_to_base_static_transform',
         arguments=[
-            str(transform_config.get('x', 0.0)), 
-            str(transform_config.get('y', 0.0)), 
-            str(transform_config.get('z', 0.0)),
-            str(transform_config.get('yaw', 0.0)), 
-            str(transform_config.get('pitch', 0.0)), 
-            str(transform_config.get('roll', 0.0)),
-            transform_config.get('parent_frame', 'base'), 
-            transform_config.get('child_frame', 'livox_frame')
+            '--x', str(transform_config.get('x', 0.0)),
+            '--y', str(transform_config.get('y', 0.0)),
+            '--z', str(transform_config.get('z', 0.0)),
+            '--roll', str(transform_config.get('roll', 0.0)),
+            '--pitch', str(transform_config.get('pitch', 0.0)),
+            '--yaw', str(transform_config.get('yaw', 0.0)),
+            '--frame-id', transform_config.get('parent_frame', 'base'),
+            '--child-frame-id', transform_config.get('child_frame', 'livox_frame')
         ]
     )
     livox_lidar_launch = IncludeLaunchDescription(
@@ -129,7 +133,7 @@ def generate_launch_description():
         name='livox_converter',
         output='screen',
         parameters=[{
-            'config_path': lidar_config_file
+            'config_path': config_file
         }]
     )
     auto_setup = Node(
@@ -152,7 +156,7 @@ def generate_launch_description():
         name='wall_detector',
         output='screen',
         parameters=[{
-            'config_path': lidar_config_file
+            'config_path': config_file
         }]
     )
     
@@ -194,7 +198,7 @@ def generate_launch_description():
             name='crop_box_gui',
             output='screen',
             parameters=[{
-                'config_path': lidar_config_file
+                'config_path': config_file
             }]
         )
         nodes.append(crop_box_gui)

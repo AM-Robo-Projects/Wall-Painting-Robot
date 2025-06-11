@@ -4,12 +4,12 @@
 lidar:
   # Transform configuration between frames
   transform:
-    x: -0.135
-    y: 0.0
+    x: 0.0
+    y: 0.135
     z: 0.0
     roll: 0.0
     pitch: 0.0
-    yaw: 3.14
+    yaw: 0.0
     parent_frame: "base"
     child_frame: "livox_frame"
 
@@ -47,10 +47,10 @@ robot:
 # Painting Parameters
 painting:
   workspace:
-    min_x: -0.0                    
-    max_x: 1.0                     
-    min_y: -0.40                   
-    max_y: 0.40                    
+    movement_min: -1.0      # Minimum value along the movement axis (dynamic: x or y)
+    movement_max: 1.0       # Maximum value along the movement axis (dynamic: x or y)
+    approach_min: -0.40     # Minimum value along the approach axis (dynamic: x or y)
+    approach_max: 0.40      # Maximum value along the approach axis (dynamic: x or y)
     min_z: 0.25                    
     max_z: 0.70                    
   

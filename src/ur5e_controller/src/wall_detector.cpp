@@ -92,10 +92,11 @@ public:
             throw std::runtime_error("No lidar.wall_detection section in config.yaml");
         }
 
+        // --- New workspace bounds ---
         if (!config["painting"] || 
             !config["painting"]["workspace"] ||
-            !config["painting"]["workspace"]["min_x"] || !config["painting"]["workspace"]["max_x"] ||
-            !config["painting"]["workspace"]["min_y"] || !config["painting"]["workspace"]["max_y"] ||
+            !config["painting"]["workspace"]["movement_min"] || !config["painting"]["workspace"]["movement_max"] ||
+            !config["painting"]["workspace"]["approach_min"] || !config["painting"]["workspace"]["approach_max"] ||
             !config["painting"]["workspace"]["min_z"] || !config["painting"]["workspace"]["max_z"])
         {
             RCLCPP_FATAL(this->get_logger(), "Missing required painting workspace bounds in config.yaml!");
@@ -103,10 +104,10 @@ public:
         }
         
         auto painting_workspace = config["painting"]["workspace"];
-        painting_min_x_ = painting_workspace["min_x"].as<double>();
-        painting_max_x_ = painting_workspace["max_x"].as<double>();
-        painting_min_y_ = painting_workspace["min_y"].as<double>();
-        painting_max_y_ = painting_workspace["max_y"].as<double>();
+        movement_min_ = painting_workspace["movement_min"].as<double>();
+        movement_max_ = painting_workspace["movement_max"].as<double>();
+        approach_min_ = painting_workspace["approach_min"].as<double>();
+        approach_max_ = painting_workspace["approach_max"].as<double>();
         painting_min_z_ = painting_workspace["min_z"].as<double>();
         painting_max_z_ = painting_workspace["max_z"].as<double>();
 
@@ -126,8 +127,8 @@ public:
         }
 
         RCLCPP_INFO(this->get_logger(), "Painting workspace bounds loaded from config:");
-        RCLCPP_INFO(this->get_logger(), "  X: [%.2f, %.2f]", painting_min_x_, painting_max_x_);
-        RCLCPP_INFO(this->get_logger(), "  Y: [%.2f, %.2f]", painting_min_y_, painting_max_y_);
+        RCLCPP_INFO(this->get_logger(), "  Movement: [%.2f, %.2f]", movement_min_, movement_max_);
+        RCLCPP_INFO(this->get_logger(), "  Approach: [%.2f, %.2f]", approach_min_, approach_max_);
         RCLCPP_INFO(this->get_logger(), "  Z: [%.2f, %.2f]", painting_min_z_, painting_max_z_);
         RCLCPP_INFO(this->get_logger(), "Robot transform params: scale_xy=%.3f, offset_x=%.3f, offset_y=%.3f", scale_xy_, add_x_, add_y_);
 
@@ -163,6 +164,10 @@ public:
         this->declare_parameter<double>("crop_max_z", max_z_);
         this->declare_parameter<int>("min_wall_points", min_wall_points_);
         this->declare_parameter<double>("min_wall_size", min_wall_size_);
+        this->declare_parameter<double>("movement_min", movement_min_);
+        this->declare_parameter<double>("movement_max", movement_max_);
+        this->declare_parameter<double>("approach_min", approach_min_);
+        this->declare_parameter<double>("approach_max", approach_max_);
 
         // Set initial values from parameters (overrides YAML if set)
         min_x_ = this->get_parameter("crop_min_x").as_double();
@@ -173,6 +178,10 @@ public:
         max_z_ = this->get_parameter("crop_max_z").as_double();
         min_wall_points_ = this->get_parameter("min_wall_points").as_int();
         min_wall_size_ = this->get_parameter("min_wall_size").as_double();
+        movement_min_ = this->get_parameter("movement_min").as_double();
+        movement_max_ = this->get_parameter("movement_max").as_double();
+        approach_min_ = this->get_parameter("approach_min").as_double();
+        approach_max_ = this->get_parameter("approach_max").as_double();
 
         // Register callback for parameter updates
         param_callback_handle_ = this->add_on_set_parameters_callback(
@@ -195,9 +204,9 @@ private:
     int min_wall_points_;
     double min_wall_size_; // add this
 
-    // Painting configuration bounds
-    double painting_min_x_, painting_max_x_;
-    double painting_min_y_, painting_max_y_;
+    // New workspace bounds
+    double movement_min_, movement_max_;
+    double approach_min_, approach_max_;
     double painting_min_z_, painting_max_z_;
 
     // Robot reach scale and offsets (now configurable)
@@ -234,6 +243,14 @@ private:
                 min_wall_points_ = param.as_int();
             else if (param.get_name() == "min_wall_size")
                 min_wall_size_ = param.as_double();
+            else if (param.get_name() == "movement_min")
+                movement_min_ = param.as_double();
+            else if (param.get_name() == "movement_max")
+                movement_max_ = param.as_double();
+            else if (param.get_name() == "approach_min")
+                approach_min_ = param.as_double();
+            else if (param.get_name() == "approach_max")
+                approach_max_ = param.as_double();
         }
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
@@ -252,6 +269,10 @@ private:
         max_z_ = this->get_parameter("crop_max_z").as_double();
         min_wall_points_ = this->get_parameter("min_wall_points").as_int();
         min_wall_size_ = this->get_parameter("min_wall_size").as_double();
+        movement_min_ = this->get_parameter("movement_min").as_double();
+        movement_max_ = this->get_parameter("movement_max").as_double();
+        approach_min_ = this->get_parameter("approach_min").as_double();
+        approach_max_ = this->get_parameter("approach_max").as_double();
 
         pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
         pcl::fromROSMsg(*msg, *cloud);
@@ -336,30 +357,44 @@ private:
         }
     }
 
-    // Clamp a point's x/y/z to min/max bounds
-    geometry_msgs::msg::Point boundPoint(const geometry_msgs::msg::Point &pt)
+    // Clamp a point's x/y/z to min/max bounds based on wall orientation
+    geometry_msgs::msg::Point boundPointDynamic(
+        const geometry_msgs::msg::Point &pt,
+        const Eigen::Vector3f &wall_normal)
     {
         geometry_msgs::msg::Point out = pt;
-        if (out.x < painting_min_x_)
-            out.x = painting_min_x_;
-        if (out.x > painting_max_x_)
-            out.x = painting_max_x_;
-        if (out.y < painting_min_y_)
-            out.y = painting_min_y_;
-        if (out.y > painting_max_y_)
-            out.y = painting_max_y_;
-        if (out.z < painting_min_z_)
-            out.z = painting_min_z_;
-        if (out.z > painting_max_z_)
-            out.z = painting_max_z_;
+
+        // Determine approach and movement axes: 0=x, 1=y
+        int approach_axis = (std::abs(wall_normal.y()) > std::abs(wall_normal.x())) ? 1 : 0;
+        int movement_axis = 1 - approach_axis;
+
+        // Axis pointers for easier access
+        double *coords[2] = {&out.x, &out.y};
+        const double min_vals[2] = {approach_min_, movement_min_};
+        const double max_vals[2] = {approach_max_, movement_max_};
+
+        // Clamp approach axis
+        if (*coords[approach_axis] < min_vals[0]) *coords[approach_axis] = min_vals[0];
+        if (*coords[approach_axis] > max_vals[0]) *coords[approach_axis] = max_vals[0];
+
+        // Clamp movement axis
+        if (*coords[movement_axis] < min_vals[1]) *coords[movement_axis] = min_vals[1];
+        if (*coords[movement_axis] > max_vals[1]) *coords[movement_axis] = max_vals[1];
+
+        // Clamp z
+        if (out.z < painting_min_z_) out.z = painting_min_z_;
+        if (out.z > painting_max_z_) out.z = painting_max_z_;
+
         return out;
     }
 
-    // Apply robot-specific transformations to a point
-    geometry_msgs::msg::Point applyRobotTransforms(const geometry_msgs::msg::Point &pt)
+    // Apply robot-specific transformations to a point (dynamic axis)
+    geometry_msgs::msg::Point applyRobotTransformsDynamic(
+        const geometry_msgs::msg::Point &pt,
+        const Eigen::Vector3f &wall_normal)
     {
         geometry_msgs::msg::Point result = pt;
-        result = boundPoint(result);
+        result = boundPointDynamic(result, wall_normal);
 
         // Scale x and y toward zero to bring points closer to robot base
         result.x *= scale_xy_;
@@ -369,8 +404,8 @@ private:
         result.x += add_x_;
         result.y += add_y_;
 
-        // Apply bounds to ensure point is within robot's workspace
-        result = boundPoint(result);
+        // Apply bounds again to ensure point is within robot's workspace
+        result = boundPointDynamic(result, wall_normal);
 
         return result;
     }
@@ -385,15 +420,12 @@ private:
         try
         {
             // Wait for transform to be available
-            if (!tf_buffer_->canTransform("base", "livox_frame", tf2::TimePointZero, tf2::durationFromSec(1.0)))
+            if (!tf_buffer_->canTransform("livox_frame", "base", tf2::TimePointZero, tf2::durationFromSec(1.0)))
             {
                 RCLCPP_ERROR(this->get_logger(), "Transform from livox_frame to base not available!");
                 return pt_in_lidar;
             }
             output = tf_buffer_->transform(input, "base", tf2::durationFromSec(1.0));
-            // Negate x and y to match robot base orientation (as in wall_painter)
-            // output.point.x = -output.point.x;
-            // output.point.y = -output.point.y;
             return output.point;
         }
         catch (const tf2::TransformException &ex)
@@ -474,8 +506,8 @@ private:
             // Transform to robot base frame
             geometry_msgs::msg::Point base_point = transformToBase(corner_point);
 
-            // Apply robot-specific transformations (scaling, offset, bounds)
-            geometry_msgs::msg::Point transformed_point = applyRobotTransforms(base_point);
+            // Apply robot-specific transformations (scaling, offset, bounds) using dynamic axis logic
+            geometry_msgs::msg::Point transformed_point = applyRobotTransformsDynamic(base_point, plane_normal);
             transformed_corners.push_back(transformed_point);
         }
 
@@ -555,7 +587,7 @@ private:
 
         // Publish transformed wall marker for robot base frame visualization
         visualization_msgs::msg::Marker transformed_marker;
-        transformed_marker.header.frame_id = "world";
+        transformed_marker.header.frame_id = "base"; 
         transformed_marker.header.stamp = this->now();
         transformed_marker.ns = "transformed_walls";
         transformed_marker.id = wall_id_;
